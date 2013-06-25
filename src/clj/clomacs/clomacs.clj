@@ -1,4 +1,4 @@
-(ns clomacs.clojure-offline
+(ns clomacs.clomacs
   (:use [clojure.string :only (join split)])
   (:import (java.io StringWriter File)
            (java.net URL URLClassLoader)
