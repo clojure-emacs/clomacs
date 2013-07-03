@@ -13,6 +13,9 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 
+// TODO:
+(defvar clomacs-autoload-nrepl-on-call t)
+
 (defvar clomacs-clojure-offline-file "clomacs.clj"
   "Clojure-offline src helper file name.")
 
@@ -136,13 +139,13 @@ The `return-value' may be :value or :stdout (:value by default)"
             (sleep-for 0.1)))))
   (message "Starting nREPL server..."))
 
-(defun clomacs-ensure-nrepl-runnig (&optional clojure-side-file)
+(defun clomacs-ensure-nrepl-runnig (&optional clojure-side-file sync)
   "Ensures nrepl is runnig.
 If not, launch it, return nil. Return t otherwise."
   (interactive)
   (let ((is-running (clomacs-is-nrepl-runnig)))
     (when (not is-running)
-      (clomacs-launch-nrepl clojure-side-file))
+      (clomacs-launch-nrepl clojure-side-file sync))
     is-running))
 
 (clomacs-defun clomacs-add-to-cp clomacs.clomacs/add-to-cp)
@@ -156,13 +159,16 @@ If not, launch it, return nil. Return t otherwise."
 
 (defun clomacs-init ()
   "Init clomacs clojure side via load clojure-offline lib."
-  (when (not clomacs-is-initialized)
-    (add-to-list 'load-path
-                 (concat-path clomacs-elisp-path ".." "clj" "clomacs"))
-    (let ((clof (clomacs--find-clojure-offline-file)))
-      (nrepl-load-file-core clof)
-      (clomacs-add-to-cp (file-name-directory (expand-file-name ".." clof))))
-    (setq clomacs-is-initialized t)))
+  (if (clomacs-is-nrepl-runnig)
+      (when (not clomacs-is-initialized)
+        (add-to-list 'load-path
+                     (concat-path clomacs-elisp-path ".." "clj" "clomacs"))
+        (let ((clof (clomacs--find-clojure-offline-file)))
+          (nrepl-load-file-core clof)
+          (clomacs-add-to-cp (file-name-directory (expand-file-name ".." clof))))
+        (setq clomacs-is-initialized t))
+    ;; nrepl is not running
+    (setq clomacs-is-initialized nil))
 
 (defun clomacs-load (clojure-side-file)
   "Evaluate clojure side."
@@ -172,6 +178,14 @@ If not, launch it, return nil. Return t otherwise."
     (clomacs-add-to-cp (file-name-directory (expand-file-name ".." to-load)))
     ;; load  clojure-side file
     (nrepl-load-file to-load)))
+
+(defun clomacs-find-project-file (lib-name)
+  (let ((path (file-name-directory (locate-library lib-name))))
+    (find-file-upwards "project.clj" path 2)))
+
+(defvar clomacs-project-file
+  (clomacs-find-project-file "clomacs"))
+
 
 ;; (clomacs-is-nrepl-runnig)
 ;; (clomacs-ensure-nrepl-runnig)
