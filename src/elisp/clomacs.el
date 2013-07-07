@@ -5,6 +5,25 @@
 ;; `clomacs-load' Evaluate clojure side, run startup initialization
 ;; functions.
 ;; `clomacs-defun' - core clojure to elisp function wrapper.
+;;
+;; There are some requirements to run mixed elisp-clojure code:
+;; 1. clomacs elisp code should be loaded:
+;;    (require 'clomacs)
+;; 2. nrepl must run.
+;;    (clomacs-launch-nrepl)
+;; 3. clomacs clojure-side code should be loaded:
+;;    (clomacs-init)
+;; 4. custom elisp code should be loaded:
+;;    (require '<custom>)
+;; 5. user's java/clojure custom libraries should be added to the CLASSPATH:
+;;    TODO: load *.jar libs
+;; 6. user's custom clojure code should be added to the CLASSPATH:
+;;    (clomacs-load <clojure-side-file>)
+;;
+;; So, the user of the mixed elisp-clojure lib wants to simple run elisp code.
+;; At this point no one of this terms perhaps unsupplied or supplied some of
+;; them (or even all of them).
+
 
 (require 'nrepl)
 (require 'clomacs-lib)
@@ -13,14 +32,23 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 
-// TODO:
 (defvar clomacs-autoload-nrepl-on-call t)
+
+(defvar clomacs-custom-libs-loaded-list nil
+  "Contains the list of the libraries names already loaded to the repl.")
 
 (defvar clomacs-clojure-offline-file "clomacs.clj"
   "Clojure-offline src helper file name.")
 
 (defvar clomacs-is-initialized nil
   "When nil `clomacs-clojure-offline-file' is not loaded yet, t otherwise.")
+
+(defun clomacs-mark-uninitialized ()
+  (setq clomacs-is-initialized nil)
+  (setq clomacs-custom-libs-loaded-list nil))
+
+(add-hook 'nrepl-connected-hook 'clomacs-mark-uninitialized)
+(add-hook 'nrepl-disconnected-hook 'clomacs-mark-uninitialized)
 
 (eval-and-compile
   (defvar clomacs-elisp-path
@@ -32,8 +60,7 @@
   "Return t if nrepl process is running, nil otherwise."
   (let ((ncb (get-buffer clomacs-nrepl-connrection-buffer-name)))
     (save-excursion
-      (if (and clomacs-nrepl-connrection-buffer-name
-               (buffer-live-p ncb)
+      (if (and (buffer-live-p ncb)
                (progn
                  (set-buffer ncb)
                  nrepl-session))
@@ -75,7 +102,9 @@
                          cl-func-name
                          &optional
                          return-type
-                         return-value)
+                         return-value
+                         lib-name
+                         clojure-side-file)
   "Wrap `cl-func-name', evaluated on clojure side by `el-func-name'.
 The `return-type' possible values are listed in the
 `clomacs-possible-return-types', or it may be a function (:string by default).
@@ -88,10 +117,18 @@ The `return-value' may be :value or :stdout (:value by default)"
         (return-value (if return-value return-value :value)))
     `(defun ,el-func-name (&rest attributes)
        (when  clomacs-verify-nrepl-on-call
-         (if (not (clomacs-is-nrepl-runnig))
+         (unless (clomacs-is-nrepl-runnig)
+           (clomacs-mark-uninitialized)
+           (if clomacs-autoload-nrepl-on-call
+               ;; Raise up the world
+               (progn
+                 (clomacs-launch-nrepl nil t) ; sync nrepl launch.
+                 (clomacs-init))
              (error
               (concat "Nrepl is not launched! You can launch it via "
-                      "M-x clomacs-ensure-nrepl-runnig"))))
+                      "M-x clomacs-ensure-nrepl-runnig")))))
+       (if (and ,lib-name ,clojure-side-file) ; TODO: load *.jar libs
+           (clomacs-load ,lib-name ,clojure-side-file))
        (let ((attrs ""))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
@@ -136,7 +173,8 @@ The `return-value' may be :value or :stdout (:value by default)"
           (kill-buffer jack-buffer))
       (if sync
           (while (not (clomacs-is-nrepl-runnig))
-            (sleep-for 0.1)))))
+            (sleep-for 0.1)
+            (message "Starting nREPL server...")))))
   (message "Starting nREPL server..."))
 
 (defun clomacs-ensure-nrepl-runnig (&optional clojure-side-file sync)
@@ -165,19 +203,26 @@ If not, launch it, return nil. Return t otherwise."
                      (concat-path clomacs-elisp-path ".." "clj" "clomacs"))
         (let ((clof (clomacs--find-clojure-offline-file)))
           (nrepl-load-file-core clof)
-          (clomacs-add-to-cp (file-name-directory (expand-file-name ".." clof))))
-        (setq clomacs-is-initialized t))
+          (setq clomacs-is-initialized t)
+          (clomacs-add-to-cp
+           (file-name-directory (expand-file-name ".." clof)))))
     ;; nrepl is not running
-    (setq clomacs-is-initialized nil))
+    (progn
+      (clomacs-mark-uninitialized)
+      (error "Nrepl is not launched!"))))
 
-(defun clomacs-load (clojure-side-file)
-  "Evaluate clojure side."
+(defun clomacs-load (lib-name clojure-side-file)
+  "Evaluate user's clojure side file, mark lib as loaded."
+  (assert lib-name)
+  (assert clojure-side-file)
   (clomacs-init)
-  (let ((to-load (find-file-in-load-path clojure-side-file)))
-    ;; add clojure-side files to classpath
-    (clomacs-add-to-cp (file-name-directory (expand-file-name ".." to-load)))
-    ;; load  clojure-side file
-    (nrepl-load-file to-load)))
+  (when (not (member lib-name clomacs-custom-libs-loaded-list))
+    (let ((to-load (find-file-in-load-path clojure-side-file)))
+      ;; add clojure-side files to classpath
+      (clomacs-add-to-cp (file-name-directory (expand-file-name ".." to-load)))
+      ;; load  clojure-side file
+      (nrepl-load-file to-load))
+    (add-to-list 'clomacs-custom-libs-loaded-list lib-name)))
 
 (defun clomacs-find-project-file (lib-name)
   (let ((path (file-name-directory (locate-library lib-name))))
@@ -190,6 +235,9 @@ If not, launch it, return nil. Return t otherwise."
 ;; (clomacs-is-nrepl-runnig)
 ;; (clomacs-ensure-nrepl-runnig)
 ;; (clomacs-launch-nrepl)
+;; (progn
+;;   (clomacs-launch-nrepl nil t) ; sync nrepl launch.
+;;   (clomacs-init))
 ;; (clomacs-init)
 ;; (clomacs-print-cp)
 
