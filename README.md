@@ -114,7 +114,7 @@ lein new cm-test
 `# This is a test`<br>
 and run `M-x cm-test-mdarkdown-to-html`.
 
-`<h1>This is a test</h1>` chould occurs in the buffer under the original text.
+`<h1>This is a test</h1>` should occurs in the buffer under the original text.
 <br> Even if nrepl is not running or run with unknown CLASSPATH everything
 should works.
 
