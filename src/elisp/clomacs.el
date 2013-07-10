@@ -1,37 +1,33 @@
+;;; clomacs.el --- Simplifies emacs lisp interaction with clojure.
+
+;; Copyright (C) 2013 Kostafey <kostafey@gmail.com>
+
+;; Author: Kostafey <kostafey@gmail.com>
+;; URL: https://github.com/kostafey/clomacs
+;; Keywords: clojure, interaction
+;; Version: 0.0.1
+
+;; This file is not part of GNU Emacs.
+
+;; This program is free software: you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ;;; Commentary
 
-;; `clomacs-ensure-nrepl-runnig' - Ensures nrepl is runnig. If not, launch it,
-;; return nil. Return t otherwise.
-;; `clomacs-load' Evaluate clojure side, run startup initialization
-;; functions.
 ;; `clomacs-defun' - core clojure to elisp function wrapper.
 ;;
-;; There are some requirements to run mixed elisp-clojure code.
-;;
-;; Obviously, all the elisp-side code should be loaded at this point:
-;; 1. clomacs elisp code should be loaded:
-;;    (require 'clomacs)
-;; 2. custom elisp code should be loaded:
-;;    (require '<custom>)
-;;
-;; The clojure-side code requires the following:
-;; 1. nrepl must run:
-;;    (clomacs-launch-nrepl) / (clomacs-ensure-nrepl-runnig)
-;; 2. clomacs clojure-side code should be loaded:
-;;    (clomacs-init)
-;; 3. user's java/clojure custom *.jar libraries should be added to the
-;;    CLASSPATH:
-;;    (clomacs-load-project-dependences <custom>)
-;; 4. user's custom clojure code should be added to the CLASSPATH:
-;;    (clomacs-load <custom> <clojure-side-file>)
-;;
-;; So, the user of the mixed elisp-clojure lib wants to simple run elisp code
-;; from the <custom> lib.  But at this point we have the unknown state: probably
-;; no one of this terms are supplied, or supplied some of them (or even all of
-;; them).
-;;
-;; The purpose of the `clomacs-defun' is to do all of this verification and
-;; loading (if necessary), but just once per library.
+;; See README.md for detail description.
+
 
 
 (require 'nrepl)
@@ -109,12 +105,12 @@
 
 (defmacro* clomacs-defun (el-func-name
                           cl-func-name
-                          &optional
-                          &key (doc nil)
+                          &optional &key
+                          (doc nil)
                           return-type
                           return-value
                           lib-name
-                          clojure-side-file)
+                          clojure-side-file) ; TODO: change to namespace
   "Wrap `cl-func-name', evaluated on clojure side by `el-func-name'.
 The `return-type' possible values are listed in the
 `clomacs-possible-return-types', or it may be a function (:string by default).
@@ -122,7 +118,8 @@ The `return-value' may be :value or :stdout (:value by default)"
   (if (and return-type
            (not (functionp return-type))
            (not (member return-type clomacs-possible-return-types)))
-      (error "Wrong return-type! See  C-h v clomacs-possible-return-types"))
+      (error "Wrong return-type %s! See  C-h v clomacs-possible-return-types"
+             (force-symbol-name return-type)))
   (let ((return-type (if return-type return-type :string))
         (return-value (if return-value return-value :value)))
     `(defun ,el-func-name (&rest attributes)
@@ -197,10 +194,14 @@ If not, launch it, return nil. Return t otherwise."
       (clomacs-launch-nrepl clojure-side-file sync))
     is-running))
 
-(clomacs-defun clomacs-add-to-cp clomacs.clomacs/add-to-cp)
+(clomacs-defun clomacs-add-to-cp
+               clomacs.clomacs/add-to-cp
+               :return-value :stdout)
 
 (clomacs-defun clomacs-print-cp
-               clomacs.clomacs/print-cp :string :stdout)
+               clomacs.clomacs/print-cp
+               :return-type :string
+               :return-value :stdout)
 
 (defun clomacs--find-clojure-offline-file ()
   "Return the full path to `clomacs-clojure-offline-file'."
@@ -229,6 +230,12 @@ loaded to the user's .emacs file via (require '...)."
   (let ((path (file-name-directory (locate-library lib-name))))
     (find-file-upwards "project.clj" path 2)))
 
+(defun clomacs-find-clojure-cp (lib-name)
+  "Return the full path to src/clj/.
+`lib-name' - is the name of the custom library's main *.el file, which is
+loaded to the user's .emacs file via (require '...)."
+  (concat-path (clomacs-find-project-file lib-name) ".." "src" "clj"))
+
 (defvar clomacs-project-file
   (clomacs-find-project-file "clomacs"))
 
@@ -245,13 +252,18 @@ This call is unnecessary and used for self-testing:
   (clomacs-init)
   (when (not (member lib-name clomacs-custom-libs-loaded-list))
     ;; load all *.jar dependences from project.clj
-    (clomacs-load-project-dependences (clomacs-find-project-file lib-name))
-    (let ((to-load (find-file-in-load-path clojure-side-file)))
-      ;; add clojure-side files to classpath
-      (clomacs-add-to-cp (file-name-directory (expand-file-name ".." to-load)))
-      ;; load clojure-side file
-      (nrepl-load-file to-load))
-    (add-to-list 'clomacs-custom-libs-loaded-list lib-name)))
+    (let ((project-file-path (clomacs-find-project-file lib-name)))
+      (clomacs-load-project-dependences project-file-path)
+      (let ((to-load (clomacs-find-clojure-cp lib-name)))
+        ;; add clojure-side files to classpath
+        (clomacs-add-to-cp to-load)
+        ;; load clojure-side file
+        (nrepl-load-file (concat to-load clojure-side-file)))
+      (add-to-list 'clomacs-custom-libs-loaded-list lib-name))))
+
+
+
+
 
 ;; (clomacs-is-nrepl-runnig)
 ;; (clomacs-ensure-nrepl-runnig)
