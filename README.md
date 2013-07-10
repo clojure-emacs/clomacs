@@ -65,7 +65,7 @@ lein new cm-test
                  [markdown-clj "0.9.28"]]) ; markdown-clj dependency
 ```
 
-**3.** Copy create `clj` folder in the `src/`.<br/>
+**3.** Create `clj` folder in the `src/`.<br/>
 **4.** Copy `cm_test` to `src/clj/` folder.<br/>
 **5.** Add some code, using markdown lib in the `src/clj/cm_test/core.clj` file:
 
