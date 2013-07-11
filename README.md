@@ -84,6 +84,8 @@ lein new cm-test
 **8.** Add to the `cm-test.el` the following content:
 
 ```lisp
+(require 'clomacs)
+
 (clomacs-defun cm-test-md-to-html-wrapper
                cm-test.core/my-md-to-html-string
                :lib-name "cm-test"
