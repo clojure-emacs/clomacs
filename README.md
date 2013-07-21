@@ -53,7 +53,8 @@ elisp function.
 lein new cm-test
 ```
 
-**2.** Add markdown-clj dependency to the `project.clj` file:
+**2.** Add markdown-clj dependency to the `project.clj` file, add `src/clj`
+  folder to the classpath:
 
 ```clojure
 (defproject cm-test "0.1.0-SNAPSHOT"
@@ -61,6 +62,7 @@ lein new cm-test
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :source-paths ["src/clj"]                ; add clj folder to the classpath
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [markdown-clj "0.9.28"]]) ; markdown-clj dependency
 ```
@@ -85,11 +87,10 @@ lein new cm-test
 
 ```lisp
 (require 'clomacs)
-
 (clomacs-defun cm-test-md-to-html-wrapper
                cm-test.core/my-md-to-html-string
                :lib-name "cm-test"
-               :clojure-side-file "cm_test/core.clj"
+               :namespace cm-test.core
                :doc "Convert markdown to html via clojure lib.")
                
 (defun cm-test-mdarkdown-to-html (beg end)
@@ -112,13 +113,18 @@ lein new cm-test
 (require 'cm-test)
 ```
 
-**10.** Then mark (select) this in one of your buffers: <br>
+**10.** Then mark (select) this text in one of your buffers: <br>
 `# This is a test`<br>
 and run `M-x cm-test-mdarkdown-to-html`.
 
 `<h1>This is a test</h1>` should occurs in the buffer under the original text.
 <br> Even if nrepl is not running or run with unknown CLASSPATH everything
 should works.
+
+## TODO
+
+* There is only one namespace per lib is supported for now.
+* Ths separate `:namespace` arg in `clomacs-defun` is redundant?
 
 ## License
 
