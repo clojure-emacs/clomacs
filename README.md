@@ -38,6 +38,7 @@ just once per library, call this clojure function and return it's result.
 
 ```lisp
 ;; emacs lisp:
+(require 'clomacs)
 (clomacs-defun get-property System/getProperty)
 (message (get-property "java.version"))
 ```
@@ -105,6 +106,14 @@ lein new cm-test
                    
 (provide 'cm-test)
 ```
+
+Here is the `cm-test/src` path tree vizualization:
+* `src`
+   * `clj`
+      * `cm_test`
+         * `core.clj`
+   * `elisp`
+      * `cm-test.el`
 
 **9.** So, it can be used in your `.emacs` via:
 
