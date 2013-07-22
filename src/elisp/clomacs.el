@@ -140,6 +140,13 @@ If not, launch it, return nil. Return t otherwise."
 
 (defun clomacs-doc (x)) ; dummy definition, real definition is below.
 
+(eval-after-load "clomacs"
+  '(progn
+     ;; Should be last `clomacs-defun'
+     (clomacs-defun clomacs-doc
+                    clojure.repl/doc
+                    :return-value :stdout)))
+
 (defmacro* clomacs-defun (el-func-name
                           cl-func-name
                           &optional &key
@@ -252,11 +259,6 @@ E.g. this call is unnecessary and used for self-testing:
 
 (clomacs-defun clomacs-in-ns
                clojure.core/in-ns)
-
-;; Should be last `clomacs-defun'
-(clomacs-defun clomacs-doc
-               clojure.repl/doc
-               :return-value :stdout)
 
 (defun clomacs-load (lib-name namespace)
   "Load all *.jar deps, evaluate user's clojure side file, mark lib as loaded."

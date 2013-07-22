@@ -1,7 +1,14 @@
 # clomacs
 
-Simplifies call clojure code from emacs lisp. The purpose is to provide a tool
-for crafting mixed elisp-clojure emacs extensions.
+<img src="https://dl.dropboxusercontent.com/u/820526/clomacs.png"
+ alt="Clomacs logo" align="right" />
+
+> Emacs is a Lisp. Clojure is a Lisp. Can the two be put together to form the
+> ultimate dev environment? "Clomacs" perhaps?
+> * from Emacs isn't for everyone discussion by Anonymous Cow.
+
+Clomacs simplifies call clojure code from emacs lisp. The purpose is to provide
+a tool for crafting mixed elisp-clojure emacs extensions.
 
 ## Overview
 There are some requirements to run mixed elisp-clojure code.
