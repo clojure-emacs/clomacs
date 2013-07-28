@@ -38,6 +38,23 @@ The purpose of the `clomacs-defun` is to wrap clojure function to elisp
 function, that will do all of this verification and loading (if necessary), but
 just once per library, call this clojure function and return it's result.
 
+## Installation
+
+Clomacs should be added to the MELPA after some testing. So, it will be simple
+required by your lib.
+
+For now, it may by installed by adding `clomacs` folder somewhere in your
+`emacs.d`.
+```lisp
+(add-to-list 'load-path "~/.emacs.d/clomacs/src/elisp/")
+(require 'clomacs)
+```
+
+Furthermore, all clomacs's dependencies should be in your `~/.m2/` folder. You
+can achieve this by run `lein deps` from the `clomacs/` installation directory:
+```shell
+~/.emacs.d/clomacs/ $ lein deps
+```
 
 ## Usage
 
@@ -139,7 +156,7 @@ should works.
 
 ## TODO
 
-* There is only one namespace per lib is supported for now.
+* Unload/reload lib possibility should be added.
 * Ths separate `:namespace` arg in `clomacs-defun` is redundant?
 
 ## License

@@ -39,7 +39,8 @@
 (defvar clomacs-autoload-nrepl-on-call t)
 
 (defvar clomacs-custom-libs-loaded-list nil
-  "Contains the list of the libraries names already loaded to the repl.")
+  "A property list, contains the list of the libraries names already loaded
+to the repl and associated with the every library lists of namespaces.")
 
 (defvar clomacs-clojure-offline-file "clomacs.clj"
   "Clojure-offline src helper file name.")
@@ -71,31 +72,32 @@
           t nil))))
 
 (defun clomacs-launch-nrepl (&optional clojure-side-file sync)
-  (save-excursion
-    (let ((this-buffer (current-buffer))
-          (jack-file (find-file-in-load-path clojure-side-file))
-          (jack-buffer nil)
-          (opened nil))
-      (when jack-file
-        (dolist (buffer (buffer-list))
-          (with-current-buffer buffer
-            (when (and (buffer-file-name buffer)
-                       (buffer-live-p buffer)
-                       (equal (downcase (buffer-file-name buffer))
-                              (downcase jack-file)))
-              (setq opened t))))
-        (setq jack-buffer (find-file-noselect jack-file))
-        (set-buffer jack-buffer))
-      ;; simple run lein
-      (nrepl-jack-in)
-      (if (and jack-buffer
-               (not opened))
-          (kill-buffer jack-buffer))
-      (if sync
-          (while (not (clomacs-is-nrepl-runnig))
-            (sleep-for 0.1)
-            (message "Starting nREPL server...")))))
-  (message "Starting nREPL server..."))
+  (let ((starting-msg "Starting nREPL server..."))
+    (save-excursion
+      (let ((this-buffer (current-buffer))
+            (jack-file (find-file-in-load-path clojure-side-file))
+            (jack-buffer nil)
+            (opened nil))
+        (when jack-file
+          (dolist (buffer (buffer-list))
+            (with-current-buffer buffer
+              (when (and (buffer-file-name buffer)
+                         (buffer-live-p buffer)
+                         (equal (downcase (buffer-file-name buffer))
+                                (downcase jack-file)))
+                (setq opened t))))
+          (setq jack-buffer (find-file-noselect jack-file))
+          (set-buffer jack-buffer))
+        ;; simple run lein
+        (nrepl-jack-in)
+        (if (and jack-buffer
+                 (not opened))
+            (kill-buffer jack-buffer))
+        (if sync
+            (while (not (clomacs-is-nrepl-runnig))
+              (sleep-for 0.1)
+              (message starting-msg)))))
+    (message starting-msg)))
 
 (defun clomacs-ensure-nrepl-runnig (&optional clojure-side-file sync)
   "Ensures nrepl is runnig.
@@ -265,14 +267,27 @@ E.g. this call is unnecessary and used for self-testing:
   (assert lib-name)
   (assert namespace)
   (clomacs-init)
-  (when (not (member lib-name clomacs-custom-libs-loaded-list))
-    (let ((project-file-path (clomacs-find-project-file lib-name)))
-      ;; load all *.jar dependences from project.clj
-      (clomacs-load-project-dependences project-file-path)
-      ;; add clojure-side source file paths to classpath
-      (clomacs-add-source-paths project-file-path)
+  (let ((is-lib-added (member lib-name clomacs-custom-libs-loaded-list))
+        (is-ns-added (member namespace
+                             (lax-plist-get
+                              clomacs-custom-libs-loaded-list lib-name))))
+    (unless is-ns-added
+      (unless is-lib-added
+        (let ((project-file-path (clomacs-find-project-file lib-name)))
+          ;; load all *.jar dependences from project.clj
+          (clomacs-load-project-dependences project-file-path)
+          ;; add clojure-side source file paths to classpath
+          (clomacs-add-source-paths project-file-path)))
+      ;; load new namespace
       (clomacs-use namespace)
-      (add-to-list 'clomacs-custom-libs-loaded-list lib-name))))
+      ;; save libs and according namespaces loaded states
+      (setq clomacs-custom-libs-loaded-list
+            (lax-plist-put clomacs-custom-libs-loaded-list
+                           lib-name
+                           (cons namespace
+                                 (lax-plist-get
+                                  clomacs-custom-libs-loaded-list
+                                  lib-name)))))))
 
 ;; (clomacs-is-nrepl-runnig)
 ;; (clomacs-ensure-nrepl-runnig)
