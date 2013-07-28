@@ -13,14 +13,16 @@ a tool for crafting mixed elisp-clojure emacs extensions.
 ## Overview
 There are some requirements to run mixed elisp-clojure code.
 
-### Obviously, all the elisp-side code should be loaded at this point:
+### Elisp-side code
+Obviously, all the elisp-side code should be loaded at this point:
 
 1. clomacs elisp code should be loaded:<br/>
    `(require 'clomacs)`
 2. custom elisp code should be loaded:<br/>
    `(require '<custom>)`
 
-### The clojure-side code requires the following:
+### Clojure-side code
+The clojure-side code requires the following:
 
 1. nrepl must run.
 2. clomacs clojure-side code should be loaded.
