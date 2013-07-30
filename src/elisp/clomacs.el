@@ -145,9 +145,12 @@ If not, launch it, return nil. Return t otherwise."
 (eval-after-load "clomacs"
   '(progn
      ;; Should be last `clomacs-defun'
-     (clomacs-defun clomacs-doc
+     (clomacs-defun clomacs--doc
                     clojure.repl/doc
-                    :return-value :stdout)))
+                    :return-value :stdout)
+     (defun clomacs-doc (x)
+       (if (clomacs-is-nrepl-runnig)
+           (clomacs--doc x)))))
 
 (defmacro* clomacs-defun (el-func-name
                           cl-func-name
@@ -192,7 +195,9 @@ The `return-value' may be :value or :stdout (:value by default)"
                                (cond
                                 ((numberp a) (number-to-string a))
                                 ((stringp a) (add-quotes a))
-                                (t (concat "'" (force-symbol-name a)))))))
+                                ((and (listp a) (equal (car a) 'quote))
+                                 (concat "'" (force-symbol-name (cadr a))))
+                                (t (force-symbol-name a))))))
          (let ((result
                 (nrepl-eval
                  (concat "(" (force-symbol-name ',cl-func-name) attrs ")"))))
@@ -212,6 +217,9 @@ The `return-value' may be :value or :stdout (:value by default)"
 
 (clomacs-defun clomacs-use
                clojure.core/use)
+
+(clomacs-defun clomacs-import
+               clojure.core/import)
 
 (defadvice nrepl-create-repl-buffer
   (after clomacs-nrepl-create-repl-buffer (process))
@@ -279,7 +287,7 @@ E.g. this call is unnecessary and used for self-testing:
           ;; add clojure-side source file paths to classpath
           (clomacs-add-source-paths project-file-path)))
       ;; load new namespace
-      (clomacs-use namespace)
+      (clomacs-use `',namespace)
       ;; save libs and according namespaces loaded states
       (setq clomacs-custom-libs-loaded-list
             (lax-plist-put clomacs-custom-libs-loaded-list
