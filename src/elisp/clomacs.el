@@ -152,6 +152,46 @@ If not, launch it, return nil. Return t otherwise."
        (if (clomacs-is-nrepl-runnig)
            (clomacs--doc x)))))
 
+(defun clomacs-nrepl-verification ()
+  "Verify nrepl is running and clomacs is initialized on wrapped entity call."
+  (when  clomacs-verify-nrepl-on-call
+    (unless (clomacs-is-nrepl-runnig)
+      (clomacs-mark-uninitialized)
+      (if clomacs-autoload-nrepl-on-call
+          ;; Raise up the world
+          (progn
+            (clomacs-launch-nrepl nil t) ; sync nrepl launch.
+            (clomacs-init))
+        (error
+         (concat "Nrepl is not launched! You can launch it via "
+                 "M-x clomacs-ensure-nrepl-runnig"))))))
+
+(defmacro* clomacs-def (el-entity-name
+                        cl-entity-name
+                        &optional &key
+                        (doc nil)
+                        (type :string)
+                        lib-name
+                        namespace)
+  (let ((doc (if doc doc
+               (concat "Wrapped clojure value: "
+                       (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
+                         (if cl-entity-doc (concat "\n" cl-entity-doc)
+                           (force-symbol-name cl-entity-name)))))))
+    `(defvar ,el-entity-name
+       (progn
+         (clomacs-nrepl-verification)
+         (if (and ,lib-name ',namespace)
+             (clomacs-load ,lib-name ',namespace))
+         (let ((result
+                (nrepl-eval
+                 (concat (force-symbol-name ',cl-entity-name)))))
+           (if (plist-get result :stderr)
+               (error (plist-get result :stderr))
+             (clomacs-format-result
+              (plist-get result :value) ',type))))
+       ,doc)))
+
 (defmacro* clomacs-defun (el-func-name
                           cl-func-name
                           &optional &key
@@ -176,17 +216,7 @@ The `return-value' may be :value or :stdout (:value by default)"
                            (force-symbol-name cl-func-name)))))))
     `(defun ,el-func-name (&rest attributes)
        ,doc
-       (when  clomacs-verify-nrepl-on-call
-         (unless (clomacs-is-nrepl-runnig)
-           (clomacs-mark-uninitialized)
-           (if clomacs-autoload-nrepl-on-call
-               ;; Raise up the world
-               (progn
-                 (clomacs-launch-nrepl nil t) ; sync nrepl launch.
-                 (clomacs-init))
-             (error
-              (concat "Nrepl is not launched! You can launch it via "
-                      "M-x clomacs-ensure-nrepl-runnig")))))
+       (clomacs-nrepl-verification)
        (if (and ,lib-name ',namespace)
            (clomacs-load ,lib-name ',namespace))
        (let ((attrs ""))
