@@ -152,6 +152,17 @@ If not, launch it, return nil. Return t otherwise."
        (if (clomacs-is-nrepl-runnig)
            (clomacs--doc x)))))
 
+(defun clomacs-get-doc (doc cl-entity-name cl-entity-type)
+  "Form the emacs-lisp side entity docstring.
+`doc' - user-defined docsting.
+`cl-entity-name' - clojure side entity name.
+`cl-entity-type' - \"value\" or \"function\""
+  (if doc doc
+    (concat (format "Wrapped clojure %s: " cl-entity-type)
+            (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
+              (if cl-entity-doc (concat "\n" cl-entity-doc)
+                (force-symbol-name cl-entity-name))))))
+
 (defun clomacs-nrepl-verification ()
   "Verify nrepl is running and clomacs is initialized on wrapped entity call."
   (when  clomacs-verify-nrepl-on-call
@@ -173,11 +184,7 @@ If not, launch it, return nil. Return t otherwise."
                         (type :string)
                         lib-name
                         namespace)
-  (let ((doc (if doc doc
-               (concat "Wrapped clojure value: "
-                       (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
-                         (if cl-entity-doc (concat "\n" cl-entity-doc)
-                           (force-symbol-name cl-entity-name)))))))
+  (let ((doc (clomacs-get-doc doc cl-entity-name "value")))
     `(defvar ,el-entity-name
        (progn
          (clomacs-nrepl-verification)
@@ -209,11 +216,7 @@ The `return-value' may be :value or :stdout (:value by default)"
            (not (member return-type clomacs-possible-return-types)))
       (error "Wrong return-type %s! See  C-h v clomacs-possible-return-types"
              (force-symbol-name return-type)))
-  (let ((doc (if doc doc
-               (concat "Wrapped clojure function: "
-                       (let ((cl-func-doc (clomacs-doc cl-func-name)))
-                         (if cl-func-doc (concat "\n" cl-func-doc)
-                           (force-symbol-name cl-func-name)))))))
+  (let ((doc (clomacs-get-doc doc cl-func-name "function")))
     `(defun ,el-func-name (&rest attributes)
        ,doc
        (clomacs-nrepl-verification)
