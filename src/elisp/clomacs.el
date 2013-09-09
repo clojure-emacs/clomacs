@@ -254,6 +254,11 @@ The `return-value' may be :value or :stdout (:value by default)"
 (clomacs-defun clomacs-import
                clojure.core/import)
 
+(clomacs-defun clomacs-print
+               clojure.core/print
+               :return-type :string
+               :return-value :stdout)
+
 (defadvice nrepl-create-repl-buffer
   (after clomacs-nrepl-create-repl-buffer (process))
   "Hack to restore previous buffer after nrepl launched."
