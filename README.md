@@ -156,6 +156,13 @@ and run `M-x cm-test-mdarkdown-to-html`.
 <br> Even if nrepl is not running or run with unknown CLASSPATH everything
 should works.
 
+## Requirements:
+
+* [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.
+* [Leiningen](http://leiningen.org) 2.x
+* [nrepl.el](https://github.com/kingtim/nrepl.el)
+* [pomegranate](https://github.com/cemerick/pomegranate)
+
 ## TODO
 
 * Unload/reload lib possibility should be added.
