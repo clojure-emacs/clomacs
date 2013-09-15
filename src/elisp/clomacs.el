@@ -124,11 +124,11 @@ If not, launch it, return nil. Return t otherwise."
   (assert return-type)
   (let ((return-string (clomacs-strip-string raw-string)))
     (cond
-     ((functionp return-type) (apply return-type (list return-string)))
+     ((functionp return-type) (funcall return-type raw-string))
      ((eq return-type :string) return-string)
      ((eq return-type :int) (string-to-int return-string))
      ((eq return-type :number) (string-to-number return-string))
-     ((eq return-type :list) (string-to-list return-string))
+     ((eq return-type :list) (read raw-string))
      ((eq return-type :char) (string-to-char return-string))
      ((eq return-type :vector) (string-to-vector return-string)))))
 
