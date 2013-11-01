@@ -228,9 +228,12 @@ The `return-value' may be :value or :stdout (:value by default)"
                                (cond
                                 ((numberp a) (number-to-string a))
                                 ((stringp a) (add-quotes a))
+                                ((booleanp a) (if a "true" "false"))
                                 ((and (listp a) (equal (car a) 'quote))
                                  (concat "'" (force-symbol-name (cadr a))))
-                                (t (force-symbol-name a))))))
+                                ((symbolp a) (force-symbol-name a))
+                                (t (replace-regexp-in-string
+                                    "\\\\." "." (format "'%S" a)))))))
          (let ((result
                 (nrepl-eval
                  (concat "(" (force-symbol-name ',cl-func-name) attrs ")"))))
