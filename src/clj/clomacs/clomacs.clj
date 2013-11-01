@@ -117,6 +117,11 @@ scope."
 (defn load-artifact [artifact-name]
   (add-to-cp (get-jar-location artifact-name)))
 
+(def offline-atom (atom false))
+
+(defn set-offline [is-offline]
+  (reset! offline-atom is-offline))
+
 (do
   ;; (in-ns 'clomacs.clomacs)
   (dorun
@@ -162,7 +167,8 @@ scope."
   (require '[cemerick.pomegranate :as pom])
   (pom/add-dependencies :coordinates '[[leiningen-core "2.3.2"]]
                         :repositories (merge cemerick.pomegranate.aether/maven-central
-                                             {"clojars" "http://clojars.org/repo"}))
+                                             {"clojars" "http://clojars.org/repo"})
+                        :offline? @offline-atom)
   (require '[leiningen.core.project :as project]))
 
 (defn load-project-dependences [project-file-path]
@@ -177,6 +183,7 @@ scope."
                        project-file-path))))
 
 (comment
+  (in-ns 'clomacs.clomacs)
   (get-jar-location '[leiningen-core "2.1.3"])
   (load-artifact '[com.cemerick/pomegranate "0.2.0"])
 

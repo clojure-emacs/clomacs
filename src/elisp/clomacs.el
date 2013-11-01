@@ -311,6 +311,9 @@ E.g. this call is unnecessary and used for self-testing:
 (clomacs-defun clomacs-in-ns
                clojure.core/in-ns)
 
+(clomacs-defun clomacs-set-offline
+               clomacs.clomacs/set-offline)
+
 (defun clomacs-load (lib-name namespace)
   "Load all *.jar deps, evaluate user's clojure side file, mark lib as loaded."
   (assert lib-name)

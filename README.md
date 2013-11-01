@@ -156,6 +156,12 @@ and run `M-x cm-test-mdarkdown-to-html`.
 <br> Even if nrepl is not running or run with unknown CLASSPATH everything
 should works.
 
+## Project uses clomacs:
+
+* [cm-test](https://github.com/kostafey/cm-test)
+* [ejc-sql](https://github.com/kostafey/ejc-sql)
+* [clojure-offline](https://github.com/kostafey/clojure-offline)
+
 ## Requirements:
 
 * [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.
