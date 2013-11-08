@@ -29,7 +29,7 @@
 ;; See README.md for detail description.
 
 
-(require 'nrepl)
+(require 'cider)
 (require 'clomacs-lib)
 
 (defvar clomacs-nrepl-connrection-buffer-name (nrepl-connection-buffer-name))
@@ -89,7 +89,7 @@ to the repl and associated with the every library lists of namespaces.")
           (setq jack-buffer (find-file-noselect jack-file))
           (set-buffer jack-buffer))
         ;; simple run lein
-        (nrepl-jack-in)
+        (cider-jack-in)
         (if (and jack-buffer
                  (not opened))
             (kill-buffer jack-buffer))
@@ -191,7 +191,7 @@ If not, launch it, return nil. Return t otherwise."
          (if (and ,lib-name ',namespace)
              (clomacs-load ,lib-name ',namespace))
          (let ((result
-                (nrepl-eval
+                (cider-read-and-eval
                  (concat (force-symbol-name ',cl-entity-name)))))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
@@ -235,7 +235,7 @@ The `return-value' may be :value or :stdout (:value by default)"
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
          (let ((result
-                (nrepl-eval
+                (cider-read-and-eval
                  (concat "(" (force-symbol-name ',cl-func-name) attrs ")"))))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
@@ -279,7 +279,7 @@ The `return-value' may be :value or :stdout (:value by default)"
         (add-to-list 'load-path
                      (concat-path clomacs-elisp-path ".." "clj" "clomacs"))
         (let ((clof (clomacs--find-clojure-offline-file)))
-          (nrepl-load-file-core clof)
+          (cider-load-file-core clof)
           (setq clomacs-is-initialized t)
           (clomacs-add-to-cp
            (file-name-directory (expand-file-name ".." clof)))))
