@@ -191,7 +191,7 @@ If not, launch it, return nil. Return t otherwise."
          (if (and ,lib-name ',namespace)
              (clomacs-load ,lib-name ',namespace))
          (let ((result
-                (cider-read-and-eval
+                (nrepl-send-string-sync
                  (concat (force-symbol-name ',cl-entity-name)))))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
@@ -235,7 +235,7 @@ The `return-value' may be :value or :stdout (:value by default)"
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
          (let ((result
-                (cider-read-and-eval
+                (nrepl-send-string-sync
                  (concat "(" (force-symbol-name ',cl-func-name) attrs ")"))))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
