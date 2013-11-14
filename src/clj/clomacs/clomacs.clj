@@ -175,7 +175,8 @@ scope."
   (pom/add-dependencies :coordinates
                         (:dependencies (project/read
                                         project-file-path))
-                        :repositories project/default-repositories))
+                        :repositories project/default-repositories
+                        :offline? @offline-atom))
 
 (defn add-source-paths [project-file-path]
   (map add-to-cp
