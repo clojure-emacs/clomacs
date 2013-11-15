@@ -341,6 +341,10 @@ E.g. this call is unnecessary and used for self-testing:
                                   clomacs-custom-libs-loaded-list
                                   lib-name)))))))
 
+(defun clomacs-strip-text-properties(txt)
+  (set-text-properties 0 (length txt) nil txt)
+      txt)
+
 ;; (clomacs-is-nrepl-runnig)
 ;; (clomacs-ensure-nrepl-runnig)
 ;; (clomacs-launch-nrepl)

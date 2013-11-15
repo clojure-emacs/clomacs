@@ -166,7 +166,7 @@ should works.
 
 * [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.
 * [Leiningen](http://leiningen.org) 2.x
-* [nrepl.el](https://github.com/kingtim/nrepl.el)
+* [CIDER](https://github.com/clojure-emacs/cider)
 * [pomegranate](https://github.com/cemerick/pomegranate)
 
 ## TODO
