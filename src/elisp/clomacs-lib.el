@@ -22,12 +22,13 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-(defun force-symbol-name (some-symbol)
+(defun clomacs-force-symbol-name (some-symbol)
   "Return lisp symbol `some-symbol' as a string at all costs!"
   (mapconcat 'char-to-string
              (string-to-list (symbol-name some-symbol)) ""))
 
-(defun find-file-in-load-path (search-file-name &optional fail-on-error)
+(defun clomacs-find-file-in-load-path (search-file-name
+                                       &optional fail-on-error)
   "Return the full path to `search-file-name'.
 `search-file-name' is searching in the emacs `load-path'.
 When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
@@ -41,7 +42,7 @@ When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
         (error (concat "Can't find file " search-file-name))
       result)))
 
-(defun find-file-recursively (search-file-name
+(defun clomacs-find-file-recursively (search-file-name
                               &optional start-path fail-on-error)
   "Return the full path to `search-file-name'.
 Recursive searching starts from `start-path'.
@@ -60,8 +61,9 @@ When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
                                       (file-name-nondirectory entity-name)
                                       0 2) ".#"))))
                     ;; is a directory
-                    (setq result (find-file-recursively search-file-name
-                                                        entity-name nil))
+                    (setq result (clomacs-find-file-recursively
+                                  search-file-name
+                                  entity-name nil))
                   ;; is a file
                   (if (equal (downcase search-file-name)
                              (downcase (file-name-nondirectory entity-name)))
@@ -70,7 +72,7 @@ When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
         (error (concat "Can't find file " search-file-name)))
     result))
 
-(defun find-file-upwards (search-file-name start-path
+(defun clomacs-find-file-upwards (search-file-name start-path
                           &optional ascent-depth fail-on-error)
   "Return the full path to `search-file-name' by moving upwards
 on the directory tree.
@@ -96,18 +98,18 @@ When `fail-on-error' is t, raise error if nothing found,return nil otherwise."
                              (downcase (file-name-nondirectory entity-name)))
                       (setq result entity-name)))))))
     (if (and (not result) (> ascent-depth 0))
-        (setq result (find-file-upwards search-file-name
-                                        (concat-path start-path "..")
+        (setq result (clomacs-find-file-upwards search-file-name
+                                        (clomacs-concat-path start-path "..")
                                         (1- ascent-depth)
                                         fail-on-error)))
     (if (and fail-on-error (not result))
         (error (concat "Can't find file " search-file-name)))
     result))
 
-(defun concat-path (&rest folders)
+(defun clomacs-concat-path (&rest folders)
   "Concatenate list of folders to the path.
 E.g.
- (concat-path (getenv \"HOME\") \".m2\" \"repository\")"
+ (clomacs-concat-path (getenv \"HOME\") \".m2\" \"repository\")"
   (let ((path))
     (dolist (folder folders)
       (setq path (if (equal ".." folder)
@@ -115,10 +117,14 @@ E.g.
                    (file-name-as-directory (concat path folder)))))
     path))
 
-(defun add-quotes (str)
+(defun clomacs-add-quotes (str)
   (concat "\"" str "\""))
 
-(defun add-squotes (str)
+(defun clomacs-add-squotes (str)
   (concat "'" str "'"))
+
+(defun clomacs-strip-text-properties(txt)
+  (set-text-properties 0 (length txt) nil txt)
+      txt)
 
 (provide 'clomacs-lib)

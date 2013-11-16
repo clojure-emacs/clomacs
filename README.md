@@ -8,7 +8,7 @@
 > * from Emacs isn't for everyone discussion by Anonymous Cow.
 
 Clomacs simplifies call clojure code from emacs lisp. The purpose is to provide
-a tool for crafting mixed elisp-clojure emacs extensions.
+a tool for creating mixed elisp-clojure emacs extensions.
 
 ## Overview
 There are some requirements to run mixed elisp-clojure code.
@@ -156,7 +156,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 <br> Even if nrepl is not running or run with unknown CLASSPATH everything
 should works.
 
-## Project uses clomacs:
+## Projects uses clomacs:
 
 * [cm-test](https://github.com/kostafey/cm-test)
 * [ejc-sql](https://github.com/kostafey/ejc-sql)
