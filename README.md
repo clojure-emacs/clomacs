@@ -74,6 +74,9 @@ elisp function.
 
 ### Full-fledged example
 
+The full source code for the following example is here:
+[cm-test](https://github.com/kostafey/cm-test).
+
 **1.** Create new clojure project in a common way:
 
 ```bash
