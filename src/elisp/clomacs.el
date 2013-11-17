@@ -32,12 +32,8 @@
 (require 'cider)
 (require 'clomacs-lib)
 
-(defvar clomacs-nrepl-connrection-buffer-name (nrepl-connection-buffer-name))
-
 (defvar clomacs-verify-nrepl-on-call t)
-
 (defvar clomacs-autoload-nrepl-on-call t)
-
 (defvar clomacs-custom-libs-loaded-list nil
   "A property list, contains the list of the libraries names already loaded
 to the repl and associated with the every library lists of namespaces.")
@@ -61,54 +57,53 @@ to the repl and associated with the every library lists of namespaces.")
       (and path (file-name-directory path)))
     "Directory containing the clomacs elisp code."))
 
+(defun clomacs-is-session-here (nrepl-connection-buffer)
+  (save-excursion
+    (if (and (buffer-live-p nrepl-connection-buffer)
+             (progn
+               (set-buffer nrepl-connection-buffer)
+               nrepl-session))
+        t nil)))
+
 (defun clomacs-is-nrepl-runnig ()
   "Return t if nrepl process is running, nil otherwise."
-  (let ((ncb (get-buffer clomacs-nrepl-connrection-buffer-name)))
-    (save-excursion
-      (if (and (buffer-live-p ncb)
-               (progn
-                 (set-buffer ncb)
-                 nrepl-session))
-          t nil))))
+  (and
+   (> (length (nrepl-connection-buffers)) 0)
+   (reduce (lambda (x y) (or x y))
+           (mapcar
+            (lambda (buffer-name)
+              (lexical-let ((buffer (get-buffer buffer-name))
+                            (project-directory (nrepl-project-directory-for
+                                                (nrepl-current-dir))))
+                (if project-directory
+                    (and (equal project-directory
+                                (buffer-local-value 'nrepl-project-dir buffer))
+                         (clomacs-is-session-here buffer))
+                  (if (equal buffer-name
+                             (format nrepl-connection-buffer-name-template ""))
+                      (clomacs-is-session-here buffer)))))
+            (nrepl-connection-buffers)))))
 
-(defun clomacs-launch-nrepl (&optional clojure-side-file sync)
+(defun clomacs-launch-nrepl (&optional sync)
   (let ((starting-msg "Starting nREPL server..."))
-    (save-excursion
-      (let ((this-buffer (current-buffer))
-            (jack-file (clomacs-find-file-in-load-path clojure-side-file))
-            (jack-buffer nil)
-            (opened nil))
-        (when jack-file
-          (dolist (buffer (buffer-list))
-            (with-current-buffer buffer
-              (when (and (buffer-file-name buffer)
-                         (buffer-live-p buffer)
-                         (equal (downcase (buffer-file-name buffer))
-                                (downcase jack-file)))
-                (setq opened t))))
-          (setq jack-buffer (find-file-noselect jack-file))
-          (set-buffer jack-buffer))
-        ;; simple run lein
-        (cider-jack-in)
-        (if (and jack-buffer
-                 (not opened))
-            (kill-buffer jack-buffer))
-        (if sync
-            (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
-              (setq cider-repl-pop-to-buffer-on-connect nil)
-              (while (not (clomacs-is-nrepl-runnig))
-                (sleep-for 0.1)
-                (message starting-msg))
-              (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))))
+    ;; simple run lein
+    (cider-jack-in)
+    (if sync
+        (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
+          (setq cider-repl-pop-to-buffer-on-connect nil)
+          (while (not (clomacs-is-nrepl-runnig))
+            (sleep-for 0.1)
+            (message starting-msg))
+          (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))
     (message starting-msg)))
 
-(defun clomacs-ensure-nrepl-runnig (&optional clojure-side-file sync)
+(defun clomacs-ensure-nrepl-runnig (&optional sync)
   "Ensures nrepl is runnig.
 If not, launch it, return nil. Return t otherwise."
   (interactive)
   (let ((is-running (clomacs-is-nrepl-runnig)))
     (when (not is-running)
-      (clomacs-launch-nrepl clojure-side-file sync))
+      (clomacs-launch-nrepl sync))
     is-running))
 
 (defun clomacs-return-stringp (raw-string)
@@ -174,7 +169,7 @@ If not, launch it, return nil. Return t otherwise."
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world
           (progn
-            (clomacs-launch-nrepl nil t) ; sync nrepl launch.
+            (clomacs-launch-nrepl t) ; sync nrepl launch.
             (clomacs-init))
         (error
          (concat "Nrepl is not launched! You can launch it via "
@@ -345,7 +340,7 @@ E.g. this call is unnecessary and used for self-testing:
 ;; (clomacs-ensure-nrepl-runnig)
 ;; (clomacs-launch-nrepl)
 ;; (progn
-;;   (clomacs-launch-nrepl nil t) ; sync nrepl launch.
+;;   (clomacs-launch-nrepl t) ; sync nrepl launch.
 ;;   (clomacs-init))
 ;; (clomacs-init)
 ;; (clomacs-print-cp)
