@@ -274,7 +274,7 @@ The `return-value' may be :value or :stdout (:value by default)"
                      (clomacs-concat-path clomacs-elisp-path
                                           ".." "clj" "clomacs"))
         (let ((clof (clomacs--find-clojure-offline-file)))
-          (cider-load-file-core clof)
+          (cider-load-file clof)
           (setq clomacs-is-initialized t)
           (clomacs-add-to-cp
            (file-name-directory (expand-file-name ".." clof)))))
