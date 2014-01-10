@@ -266,6 +266,13 @@ The `return-value' may be :value or :stdout (:value by default)"
   "Return the full path to `clomacs-clojure-offline-file'."
   (clomacs-find-file-in-load-path clomacs-clojure-offline-file))
 
+(defun clomacs-load-file (file-path)
+  "Sync and straightforward load clojure file."
+  (nrepl-send-string-sync
+   (with-temp-buffer
+     (insert-file-contents file-path)
+     (buffer-string))))
+
 (defun clomacs-init ()
   "Init clomacs clojure side via load clojure-offline lib."
   (if (clomacs-is-nrepl-runnig)
@@ -274,7 +281,7 @@ The `return-value' may be :value or :stdout (:value by default)"
                      (clomacs-concat-path clomacs-elisp-path
                                           ".." "clj" "clomacs"))
         (let ((clof (clomacs--find-clojure-offline-file)))
-          (cider-load-file clof)
+          (clomacs-load-file clof)
           (setq clomacs-is-initialized t)
           (clomacs-add-to-cp
            (file-name-directory (expand-file-name ".." clof)))))
