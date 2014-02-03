@@ -1,6 +1,6 @@
 ;;; clomacs.el --- Simplifies emacs lisp interaction with clojure.
 
-;; Copyright (C) 2013 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2014 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/kostafey/clomacs
@@ -76,18 +76,31 @@ to the repl and associated with the every library lists of namespaces.")
                             (project-directory (nrepl-project-directory-for
                                                 (nrepl-current-dir))))
                 (if project-directory
-                    (and (equal project-directory
-                                (buffer-local-value 'nrepl-project-dir buffer))
+                    (and
+                     ;; (equal project-directory
+                     ;;            (buffer-local-value 'nrepl-project-dir buffer))
                          (clomacs-is-session-here buffer))
                   (if (equal buffer-name
-                             (format nrepl-connection-buffer-name-template ""))
+                             (format nrepl-connection-buffer-name-template
+                                     " localhost"))
                       (clomacs-is-session-here buffer)))))
             (nrepl-connection-buffers)))))
 
+(defun clomacs-find-project-file (lib-name)
+  "Return the full path to project.clj file.
+`lib-name' - is the name of the custom library's main *.el file, which is
+loaded to the user's .emacs file via (require '...)."
+  (let ((path (file-name-directory (locate-library lib-name))))
+    (clomacs-find-file-upwards "project.clj" path 2)))
+
+(defvar clomacs-project-file
+  (clomacs-find-project-file "clomacs"))
+
 (defun clomacs-launch-nrepl (&optional sync)
   (let ((starting-msg "Starting nREPL server..."))
-    ;; simple run lein
-    (cider-jack-in)
+    ;; simple run lein in clomacs project
+    (with-current-buffer (get-buffer-create clomacs-project-file)
+      (cider-jack-in))
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
@@ -289,16 +302,6 @@ The `return-value' may be :value or :stdout (:value by default)"
     (progn
       (clomacs-mark-uninitialized)
       (error "Nrepl is not launched!"))))
-
-(defun clomacs-find-project-file (lib-name)
-  "Return the full path to project.clj file.
-`lib-name' - is the name of the custom library's main *.el file, which is
-loaded to the user's .emacs file via (require '...)."
-  (let ((path (file-name-directory (locate-library lib-name))))
-    (clomacs-find-file-upwards "project.clj" path 2)))
-
-(defvar clomacs-project-file
-  (clomacs-find-project-file "clomacs"))
 
 (clomacs-defun clomacs-load-project-dependences
                clomacs.clomacs/load-project-dependences
