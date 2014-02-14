@@ -98,9 +98,8 @@ loaded to the user's .emacs file via (require '...)."
 
 (defun clomacs-launch-nrepl (&optional sync)
   (let ((starting-msg "Starting nREPL server..."))
-    ;; simple run lein in clomacs project
-    (with-current-buffer (get-buffer-create clomacs-project-file)
-      (cider-jack-in))
+    ;; simple run lein
+    (cider-jack-in)
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
