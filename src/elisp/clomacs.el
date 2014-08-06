@@ -51,12 +51,20 @@ to the repl and associated with the every library lists of namespaces.")
     "Directory containing the clomacs elisp code."))
 
 (defun clomacs-is-session-here (nrepl-connection-buffer)
+  "Return nrepl session for current nrepl-connection buffer.
+Return nil if there is no such buffer or session in it."
   (save-excursion
-    (if (and (buffer-live-p nrepl-connection-buffer)
-             (progn
-               (set-buffer nrepl-connection-buffer)
-               nrepl-session))
-        t nil)))
+    (and (buffer-live-p nrepl-connection-buffer)
+         (progn
+           (set-buffer nrepl-connection-buffer)
+           nrepl-session))))
+
+(defun clomacs-get-nrepl-session (library)
+  "Return nrepl session library."
+  (clomacs-is-session-here
+   (get-buffer
+    (format nrepl-connection-buffer-name-template
+            (concat " " library)))))
 
 (defun clomacs-is-nrepl-runnig (&optional library)
   "Return t if nrepl process is running, nil otherwise."
@@ -80,25 +88,21 @@ to the repl and associated with the every library lists of namespaces.")
                         (clomacs-is-session-here buffer)))))
               (nrepl-connection-buffers))))))
 
-(defun clomacs-find-project-file (lib-name)
-  "Return the full path to project.clj file.
-`lib-name' - is the name of the custom library's main *.el file, which is
-loaded to the user's .emacs file via (require '...)."
-  (let ((path (file-name-directory (locate-library lib-name))))
-    (clomacs-find-file-upwards "project.clj" path 2)))
-
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
-                        "Starting nREPL server... for %s"
-                        (propertize library 'face 'font-lock-keyword-face)))
-         (lib-file (find-library-name library))
-         (is-opened (find-buffer-visiting lib-file))
+                        "Starting nREPL server for %s..."
+                        (propertize (or library "current-buffer")
+                                    'face 'font-lock-keyword-face)))
+         (lib-file (if library (find-library-name library)))
+         (is-opened (if lib-file (find-buffer-visiting lib-file)))
          (lib-buff (or is-opened
-                       (find-file-noselect lib-file)))
-         (sync sync)
+                       (if lib-file
+                           (find-file-noselect lib-file))))
          (old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
     ;; simple run lein
-    (with-current-buffer lib-buff
+    (if lib-buff
+        (with-current-buffer lib-buff
+          (cider-jack-in))
       (cider-jack-in))
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
@@ -107,18 +111,9 @@ loaded to the user's .emacs file via (require '...)."
             (sleep-for 0.1)
             (message starting-msg))
           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)
-          (if (not is-opened)
+          (if (and library (not is-opened))
               (kill-buffer lib-buff))))
     (message "Started.")))
-
-(defun clomacs-ensure-nrepl-runnig (&optional sync)
-  "Ensures nrepl is runnig.
-If not, launch it, return nil. Return t otherwise."
-  (interactive)
-  (let ((is-running (clomacs-is-nrepl-runnig)))
-    (when (not is-running)
-      (clomacs-launch-nrepl sync))
-    is-running))
 
 (defun clomacs-return-stringp (raw-string)
   (and
@@ -175,20 +170,15 @@ If not, launch it, return nil. Return t otherwise."
               (if cl-entity-doc (concat "\n" cl-entity-doc)
                 (clomacs-force-symbol-name cl-entity-name))))))
 
-(defun clomacs-nrepl-verification (& )
-  "Verify nrepl is running and clomacs is initialized on wrapped entity call."
+(defun clomacs-nrepl-verification ()
+  "Verify nrepl is running."
   (when  clomacs-verify-nrepl-on-call
     (unless (clomacs-is-nrepl-runnig)
-      ;; (clomacs-mark-uninitialized)
       (if clomacs-autoload-nrepl-on-call
-          ;; Raise up the world
-          (progn
-            (clomacs-launch-nrepl t) ; sync nrepl launch.
-            ;; (clomacs-init)
-            )
+          ;; Raise up the world - sync nrepl launch
+          (clomacs-launch-nrepl nil t)
         (error
-         (concat "Nrepl is not launched! You can launch it via "
-                 "M-x clomacs-ensure-nrepl-runnig"))))))
+         (concat "Nrepl is not launched!"))))))
 
 (defmacro* clomacs-def (el-entity-name
                         cl-entity-name
@@ -201,8 +191,6 @@ If not, launch it, return nil. Return t otherwise."
     `(defvar ,el-entity-name
        (progn
          (clomacs-nrepl-verification)
-         (if (and ,lib-name ',namespace)
-             (clomacs-load ,lib-name ',namespace))
          (let ((result
                 (nrepl-send-string-sync
                  (concat (clomacs-force-symbol-name ',cl-entity-name)))))
@@ -220,10 +208,12 @@ If not, launch it, return nil. Return t otherwise."
                           (return-value :value)
                           lib-name
                           namespace)
-  "Wrap `cl-func-name', evaluated on clojure side by `el-func-name'.
-The `return-type' possible values are listed in the
-`clomacs-possible-return-types', or it may be a function (:string by default).
-The `return-value' may be :value or :stdout (:value by default)"
+  "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
+DOC - optional elisp function docstring.
+The RETURN-TYPE possible values are listed in the
+CLOMACS-POSSIBLE-RETURN-TYPES, or it may be a function (:string by default).
+The RETURN-VALUE may be :value or :stdout (:value by default)
+"
   (if (and return-type
            (not (functionp return-type))
            (not (member return-type clomacs-possible-return-types)))
@@ -233,11 +223,9 @@ The `return-value' may be :value or :stdout (:value by default)"
     `(defun ,el-func-name (&rest attributes)
        ,doc
        (clomacs-nrepl-verification)
-       ;; (if (and ,lib-name ',namespace)
-       ;;     (clomacs-load ,lib-name ',namespace))
        (let ((attrs "")
-             (sesstion (or session (nrepl-current-session)))
-             )
+             (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name)) 
+                           (nrepl-current-session))))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
                                (cond
@@ -252,8 +240,13 @@ The `return-value' may be :value or :stdout (:value by default)"
                                     "\\\\." "." (format "'%S" a)))))))
          (let ((result
                 (nrepl-send-string-sync
-                 (concat "(" (clomacs-force-symbol-name
-                              ',cl-func-name) attrs ")"))))
+                 (concat "("
+                         (if ',namespace
+                             (concat
+                              (clomacs-force-symbol-name ',namespace) "/"))
+                         (clomacs-force-symbol-name
+                          ',cl-func-name) attrs ")")
+                 nil sesstion)))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
              (clomacs-format-result
@@ -296,10 +289,11 @@ The `return-value' may be :value or :stdout (:value by default)"
 (clomacs-defun clomacs-set-offline
                clomacs.clomacs/set-offline)
 
+;; (clomacs-defun get-property System/getProperty)
+;; (message (get-property "java.version"))
 ;; (clomacs-launch-nrepl "clomacs" t)
 ;; (clomacs-is-nrepl-runnig "clomacs")
 ;; (clomacs-is-nrepl-runnig)
-;; (clomacs-ensure-nrepl-runnig)
 ;; (clomacs-launch-nrepl)
 ;; (progn
 ;;   (clomacs-launch-nrepl t) ; sync nrepl launch.

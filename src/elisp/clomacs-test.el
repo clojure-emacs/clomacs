@@ -14,4 +14,7 @@
 
        (clomacs-defun get-property System/getProperty)
        (should (stringp (get-property "java.version")))
+
+       (clomacs-defun get-property2 getProperty :namespace System)
+       (should (stringp (get-property2 "java.version")))
        )
