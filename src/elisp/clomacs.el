@@ -3,7 +3,7 @@
 ;; Copyright (C) 2013-2014 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
-;; URL: https://github.com/kostafey/clomacs
+;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.2
 
@@ -34,15 +34,6 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
-(defvar clomacs-custom-libs-loaded-list nil
-  "A property list, contains the list of the libraries names already loaded
-to the repl and associated with the every library lists of namespaces.")
-
-(defvar clomacs-clojure-offline-file "clomacs.clj"
-  "Clojure-offline src helper file name.")
-
-(defvar clomacs-is-initialized nil
-  "When nil `clomacs-clojure-offline-file' is not loaded yet, t otherwise.")
 
 (eval-and-compile
   (defvar clomacs-elisp-path
@@ -79,8 +70,8 @@ Return nil if there is no such buffer or session in it."
                                                   (nrepl-current-dir))))
                   (if project-directory
                       (and
-                       ;; (equal project-directory
-                       ;;            (buffer-local-value 'nrepl-project-dir buffer))
+                       (equal project-directory
+                              (buffer-local-value 'nrepl-project-dir buffer))
                        (clomacs-is-session-here buffer))
                     (if (equal buffer-name
                                (format nrepl-connection-buffer-name-template
@@ -104,6 +95,7 @@ Return nil if there is no such buffer or session in it."
         (with-current-buffer lib-buff
           (cider-jack-in))
       (cider-jack-in))
+    (message starting-msg)
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
@@ -161,9 +153,9 @@ Return nil if there is no such buffer or session in it."
 
 (defun clomacs-get-doc (doc cl-entity-name cl-entity-type)
   "Form the emacs-lisp side entity docstring.
-`doc' - user-defined docsting.
-`cl-entity-name' - clojure side entity name.
-`cl-entity-type' - \"value\" or \"function\""
+DOC - user-defined docsting.
+CL-ENTITY-NAME - clojure side entity name.
+CL-ENTITY-TYPE - \"value\" or \"function\""
   (if doc doc
     (concat (format "Wrapped clojure %s: " cl-entity-type)
             (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
@@ -252,30 +244,6 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
              (clomacs-format-result
               (plist-get result ,return-value) ',return-type)))))))
 
-(clomacs-defun clomacs-add-to-cp
-               clomacs.clomacs/add-to-cp
-               :return-value :stdout)
-
-(clomacs-defun clomacs-print-cp
-               clomacs.clomacs/print-cp
-               :return-type :string
-               :return-value :stdout)
-
-(clomacs-defun clomacs-use
-               clojure.core/use)
-
-(clomacs-defun clomacs-import
-               clojure.core/import)
-
-(clomacs-defun clomacs-print
-               clojure.core/print
-               :return-type :string
-               :return-value :stdout)
-
-(defun clomacs--find-clojure-offline-file ()
-  "Return the full path to `clomacs-clojure-offline-file'."
-  (clomacs-find-file-in-load-path clomacs-clojure-offline-file))
-
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
   (nrepl-send-string-sync
@@ -283,23 +251,18 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
      (insert-file-contents file-path)
      (buffer-string))))
 
+(clomacs-defun clomacs-use
+               clojure.core/use)
+
+(clomacs-defun clomacs-import
+               clojure.core/import)
+
 (clomacs-defun clomacs-in-ns
                clojure.core/in-ns)
 
-(clomacs-defun clomacs-set-offline
-               clomacs.clomacs/set-offline)
-
-;; (clomacs-defun get-property System/getProperty)
-;; (message (get-property "java.version"))
-;; (clomacs-launch-nrepl "clomacs" t)
-;; (clomacs-is-nrepl-runnig "clomacs")
-;; (clomacs-is-nrepl-runnig)
-;; (clomacs-launch-nrepl)
-;; (progn
-;;   (clomacs-launch-nrepl t) ; sync nrepl launch.
-;;   (clomacs-init))
-;; (clomacs-init)
-;; (clomacs-print-cp)
-
+(clomacs-defun clomacs-print
+               clojure.core/print
+               :return-type :string
+               :return-value :stdout)
 
 (provide 'clomacs)
