@@ -63,25 +63,27 @@ Return nil if there is no such buffer or session in it."
 
 (defun clomacs-is-nrepl-runnig (&optional library)
   "Return t if nrepl process is running, nil otherwise."
-  (let ((library (or library "localhost")))
-    (and
-     (> (length (nrepl-connection-buffers)) 0)
-     (reduce (lambda (x y) (or x y))
-             (mapcar
-              (lambda (buffer-name)
-                (lexical-let ((buffer (get-buffer buffer-name))
-                              (project-directory (nrepl-project-directory-for
-                                                  (nrepl-current-dir))))
-                  (if project-directory
-                      (and
-                       (equal project-directory
-                              (buffer-local-value 'nrepl-project-dir buffer))
-                       (clomacs-is-session-here buffer))
-                    (if (equal buffer-name
-                               (format nrepl-connection-buffer-name-template
-                                       (concat " " library)))
-                        (clomacs-is-session-here buffer)))))
-              (nrepl-connection-buffers))))))
+  (if (and (not library) (> (length (nrepl-connection-buffers)) 0))
+      (nrepl-current-session)
+    (let ((library (or library "localhost")))
+      (and
+       (> (length (nrepl-connection-buffers)) 0)
+       (reduce (lambda (x y) (or x y))
+               (mapcar
+                (lambda (buffer-name)
+                  (lexical-let ((buffer (get-buffer buffer-name))
+                                (project-directory (nrepl-project-directory-for
+                                                    (nrepl-current-dir))))
+                    (if project-directory
+                        (and
+                         (equal project-directory
+                                (buffer-local-value 'nrepl-project-dir buffer))
+                         (clomacs-is-session-here buffer))
+                      (if (equal buffer-name
+                                 (format nrepl-connection-buffer-name-template
+                                         (concat " " library)))
+                          (clomacs-is-session-here buffer)))))
+                (nrepl-connection-buffers)))))))
 
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
