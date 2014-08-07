@@ -16,5 +16,18 @@
        (should (stringp (get-property "java.version")))
 
        (clomacs-defun get-property2 getProperty :namespace System)
-       (should (stringp (get-property2 "java.version")))
-       )
+       (should (stringp (get-property2 "java.version"))))
+
+(ert-deftest clomacs-integration-test ()
+  "Integration test for `clomacs'."
+  (require 'clomacs)
+
+  (clomacs-defun clomacs-test-md-wrapper
+                 my-md-to-html-string
+                 :lib-name "clomacs"
+                 :namespace clomacs.cm-test
+                 :doc "Convert markdown to html via clojure lib.")
+
+  (should (equal
+           (clomacs-test-md-wrapper "# This is a test")
+           "<h1>This is a test</h1>")))

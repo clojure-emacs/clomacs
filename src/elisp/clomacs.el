@@ -169,7 +169,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 (defun clomacs-nrepl-verification (&optional lib-name)
   "Verify nrepl is running."
   (when  clomacs-verify-nrepl-on-call
-    (unless (clomacs-is-nrepl-runnig)
+    (unless (clomacs-is-nrepl-runnig lib-name)
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world - sync nrepl launch
           (clomacs-launch-nrepl lib-name t)
@@ -186,7 +186,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
   (let ((doc (clomacs-get-doc doc cl-entity-name "value")))
     `(defvar ,el-entity-name
        (progn
-         (clomacs-nrepl-verification)
+         (clomacs-nrepl-verification ,lib-name)
          (if (and ,lib-name ',namespace)
              (clomacs-load ,lib-name ',namespace))
          (let ((result
