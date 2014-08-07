@@ -143,6 +143,12 @@ Return nil if there is no such buffer or session in it."
         :char
         :vector))
 
+(defun clomacs-highlight-initialize ()
+  (font-lock-add-keywords
+   'emacs-lisp-mode
+   '(("clomacs-defun" . font-lock-keyword-face)
+     ("clomacs-def" . font-lock-keyword-face))))
+
 (defun clomacs-doc (x)) ; dummy definition, real definition is below.
 
 (eval-after-load "clomacs"
@@ -153,7 +159,8 @@ Return nil if there is no such buffer or session in it."
                     :return-value :stdout)
      (defun clomacs-doc (x)
        (if (clomacs-is-nrepl-runnig)
-           (clomacs--doc x)))))
+           (clomacs--doc x)))
+     (clomacs-highlight-initialize)))
 
 (defun clomacs-get-doc (doc cl-entity-name cl-entity-type)
   "Form the emacs-lisp side entity docstring.
@@ -224,7 +231,7 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
        (if (and ,lib-name ',namespace)
            (clomacs-load ,lib-name ',namespace))
        (let ((attrs "")
-             (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name)) 
+             (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name))
                            (nrepl-current-session))))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
