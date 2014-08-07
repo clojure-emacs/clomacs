@@ -29,11 +29,15 @@
 ;; See README.md for detail description.
 
 
+(require 'cl-lib)
 (require 'cider)
 (require 'clomacs-lib)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
+(defvar clomacs-custom-libs-loaded-list nil
+  "A property list, contains the list of the libraries names already loaded
+to the repl and associated with the every library lists of namespaces.")
 
 (eval-and-compile
   (defvar clomacs-elisp-path
@@ -162,27 +166,29 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
               (if cl-entity-doc (concat "\n" cl-entity-doc)
                 (clomacs-force-symbol-name cl-entity-name))))))
 
-(defun clomacs-nrepl-verification ()
+(defun clomacs-nrepl-verification (&optional lib-name)
   "Verify nrepl is running."
   (when  clomacs-verify-nrepl-on-call
     (unless (clomacs-is-nrepl-runnig)
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world - sync nrepl launch
-          (clomacs-launch-nrepl nil t)
+          (clomacs-launch-nrepl lib-name t)
         (error
          (concat "Nrepl is not launched!"))))))
 
-(defmacro* clomacs-def (el-entity-name
-                        cl-entity-name
-                        &optional &key
-                        (doc nil)
-                        (type :string)
-                        lib-name
-                        namespace)
+(cl-defmacro clomacs-def (el-entity-name
+                          cl-entity-name
+                          &optional &key
+                          (doc nil)
+                          (type :string)
+                          lib-name
+                          namespace)
   (let ((doc (clomacs-get-doc doc cl-entity-name "value")))
     `(defvar ,el-entity-name
        (progn
          (clomacs-nrepl-verification)
+         (if (and ,lib-name ',namespace)
+             (clomacs-load ,lib-name ',namespace))
          (let ((result
                 (nrepl-send-string-sync
                  (concat (clomacs-force-symbol-name ',cl-entity-name)))))
@@ -192,14 +198,14 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
               (plist-get result :value) ',type))))
        ,doc)))
 
-(defmacro* clomacs-defun (el-func-name
-                          cl-func-name
-                          &optional &key
-                          (doc nil)
-                          (return-type :string)
-                          (return-value :value)
-                          lib-name
-                          namespace)
+(cl-defmacro clomacs-defun (el-func-name
+                            cl-func-name
+                            &optional &key
+                            (doc nil)
+                            (return-type :string)
+                            (return-value :value)
+                            lib-name
+                            namespace)
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
 DOC - optional elisp function docstring.
 The RETURN-TYPE possible values are listed in the
@@ -214,7 +220,9 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
   (let ((doc (clomacs-get-doc doc cl-func-name "function")))
     `(defun ,el-func-name (&rest attributes)
        ,doc
-       (clomacs-nrepl-verification)
+       (clomacs-nrepl-verification ,lib-name)
+       (if (and ,lib-name ',namespace)
+           (clomacs-load ,lib-name ',namespace))
        (let ((attrs "")
              (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name)) 
                            (nrepl-current-session))))
@@ -264,5 +272,25 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
                clojure.core/print
                :return-type :string
                :return-value :stdout)
+
+(defun clomacs-load (lib-name namespace)
+  "Evaluate user's clojure side file, mark lib as loaded."
+  (assert lib-name)
+  (assert namespace)
+  (let ((is-lib-added (member lib-name clomacs-custom-libs-loaded-list))
+        (is-ns-added (member namespace
+                             (lax-plist-get
+                              clomacs-custom-libs-loaded-list lib-name))))
+    (unless is-ns-added
+      ;; load new namespace
+      (clomacs-use `',namespace)
+      ;; save libs and according namespaces loaded states
+      (setq clomacs-custom-libs-loaded-list
+            (lax-plist-put clomacs-custom-libs-loaded-list
+                           lib-name
+                           (cons namespace
+                                 (lax-plist-get
+                                  clomacs-custom-libs-loaded-list
+                                  lib-name)))))))
 
 (provide 'clomacs)
