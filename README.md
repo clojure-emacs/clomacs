@@ -13,6 +13,8 @@ a tool for creating mixed elisp-clojure emacs extensions.
 ## Overview
 There are some requirements to run mixed elisp-clojure code.
 
+**Since `0.0.2` prefer to launch every library in separate repl.**
+
 ### Elisp-side code
 Obviously, all the elisp-side code should be loaded at this point:
 
@@ -179,6 +181,6 @@ should works.
 
 ## License
 
-Copyright © 2013 Kostafey <kostafey@gmail.com>
+Copyright © 2013-2014 Kostafey <kostafey@gmail.com>
 
 Distributed under the General Public License, version 3.
