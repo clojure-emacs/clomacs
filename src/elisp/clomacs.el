@@ -35,9 +35,6 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
-(defvar clomacs-custom-libs-loaded-list nil
-  "A property list, contains the list of the libraries names already loaded
-to the repl and associated with the every library lists of namespaces.")
 
 (eval-and-compile
   (defvar clomacs-elisp-path
@@ -196,11 +193,14 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
     `(defvar ,el-entity-name
        (progn
          (clomacs-nrepl-verification ,lib-name)
-         (if (and ,lib-name ',namespace)
-             (clomacs-load ,lib-name ',namespace))
          (let ((result
                 (nrepl-send-string-sync
-                 (concat (clomacs-force-symbol-name ',cl-entity-name)))))
+                 (concat
+                  (if ',namespace
+                      (concat
+                       "(require '"
+                       (clomacs-force-symbol-name ',namespace) ") "))
+                  (clomacs-force-symbol-name ',cl-entity-name)))))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
              (clomacs-format-result
@@ -230,8 +230,6 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
     `(defun ,el-func-name (&rest attributes)
        ,doc
        (clomacs-nrepl-verification ,lib-name)
-       (if (and ,lib-name ',namespace)
-           (clomacs-load ,lib-name ',namespace))
        (let ((attrs "")
              (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name))
                            (nrepl-current-session))))
@@ -249,12 +247,15 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
                                     "\\\\." "." (format "'%S" a)))))))
          (let ((result
                 (nrepl-send-string-sync
-                 (concat "("
-                         (if ',namespace
-                             (concat
-                              (clomacs-force-symbol-name ',namespace) "/"))
-                         (clomacs-force-symbol-name
-                          ',cl-func-name) attrs ")")
+                 (concat
+                  (if ',namespace
+                      (concat
+                       "(require '"
+                       (clomacs-force-symbol-name ',namespace) ") "))
+                  "(" (if ',namespace
+                          (concat
+                           (clomacs-force-symbol-name ',namespace) "/"))
+                  (clomacs-force-symbol-name ',cl-func-name) attrs ")")
                  nil sesstion)))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))
@@ -271,6 +272,9 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
 (clomacs-defun clomacs-use
                clojure.core/use)
 
+(clomacs-defun clomacs-require
+               clojure.core/require)
+
 (clomacs-defun clomacs-import
                clojure.core/import)
 
@@ -281,25 +285,5 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
                clojure.core/print
                :return-type :string
                :return-value :stdout)
-
-(defun clomacs-load (lib-name namespace)
-  "Evaluate user's clojure side file, mark lib as loaded."
-  (assert lib-name)
-  (assert namespace)
-  (let ((is-lib-added (member lib-name clomacs-custom-libs-loaded-list))
-        (is-ns-added (member namespace
-                             (lax-plist-get
-                              clomacs-custom-libs-loaded-list lib-name))))
-    (unless is-ns-added
-      ;; load new namespace
-      (clomacs-use `',namespace)
-      ;; save libs and according namespaces loaded states
-      (setq clomacs-custom-libs-loaded-list
-            (lax-plist-put clomacs-custom-libs-loaded-list
-                           lib-name
-                           (cons namespace
-                                 (lax-plist-get
-                                  clomacs-custom-libs-loaded-list
-                                  lib-name)))))))
 
 (provide 'clomacs)
