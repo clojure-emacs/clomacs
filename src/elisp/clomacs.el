@@ -71,15 +71,10 @@ Return nil if there is no such buffer or session in it."
                   (lexical-let ((buffer (get-buffer buffer-name))
                                 (project-directory (nrepl-project-directory-for
                                                     (nrepl-current-dir))))
-                    (if project-directory
-                        (and
-                         (equal project-directory
-                                (buffer-local-value 'nrepl-project-dir buffer))
-                         (clomacs-is-session-here buffer))
-                      (if (equal buffer-name
-                                 (format nrepl-connection-buffer-name-template
-                                         (concat " " library)))
-                          (clomacs-is-session-here buffer)))))
+                    (if (equal buffer-name
+                               (format nrepl-repl-buffer-name-template
+                                       (concat " " library)))
+                        (clomacs-is-session-here buffer))))
                 (nrepl-connection-buffers)))))))
 
 (defun clomacs-launch-nrepl (library &optional sync)
@@ -172,8 +167,8 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
               (if cl-entity-doc (concat "\n" cl-entity-doc)
                 (clomacs-force-symbol-name cl-entity-name))))))
 
-(defun clomacs-nrepl-verification (&optional lib-name)
-  "Verify nrepl is running."
+(defun clomacs-ensure-nrepl-run (&optional lib-name)
+  "Ensure nrepl is running."
   (when  clomacs-verify-nrepl-on-call
     (unless (clomacs-is-nrepl-runnig lib-name)
       (if clomacs-autoload-nrepl-on-call
@@ -192,7 +187,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
   (let ((doc (clomacs-get-doc doc cl-entity-name "value")))
     `(defvar ,el-entity-name
        (progn
-         (clomacs-nrepl-verification ,lib-name)
+         (clomacs-ensure-nrepl-run ,lib-name)
          (let ((result
                 (nrepl-send-string-sync
                  (concat
@@ -219,8 +214,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 DOC - optional elisp function docstring.
 The RETURN-TYPE possible values are listed in the
 CLOMACS-POSSIBLE-RETURN-TYPES, or it may be a function (:string by default).
-The RETURN-VALUE may be :value or :stdout (:value by default)
-"
+The RETURN-VALUE may be :value or :stdout (:value by default)."
   (if (and return-type
            (not (functionp return-type))
            (not (member return-type clomacs-possible-return-types)))
@@ -229,10 +223,15 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
   (let ((doc (clomacs-get-doc doc cl-func-name "function")))
     `(defun ,el-func-name (&rest attributes)
        ,doc
-       (clomacs-nrepl-verification ,lib-name)
-       (let ((attrs "")
-             (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name))
-                           (nrepl-current-session))))
+       (clomacs-ensure-nrepl-run ,lib-name)
+       (let* ((attrs "")
+              (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name))
+                            (nrepl-current-session)))
+              (cl-func-name-str (clomacs-force-symbol-name ',cl-func-name))
+              (namespace-str (clomacs-force-symbol-name ',namespace))
+              (ns-slash-pos (string-match "/" cl-func-name-str))
+              (implicit-ns (if ns-slash-pos
+                               (substring cl-func-name-str 0 ns-slash-pos))))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
                                (cond
@@ -249,13 +248,10 @@ The RETURN-VALUE may be :value or :stdout (:value by default)
                 (nrepl-send-string-sync
                  (concat
                   (if ',namespace
-                      (concat
-                       "(require '"
-                       (clomacs-force-symbol-name ',namespace) ") "))
-                  "(" (if ',namespace
-                          (concat
-                           (clomacs-force-symbol-name ',namespace) "/"))
-                  (clomacs-force-symbol-name ',cl-func-name) attrs ")")
+                      (concat "(require '" namespace-str ") "))
+                  "(" (if (and ',namespace (not implicit-ns))
+                          (concat namespace-str "/"))
+                  cl-func-name-str attrs ")")
                  nil sesstion)))
            (if (plist-get result :stderr)
                (error (plist-get result :stderr))

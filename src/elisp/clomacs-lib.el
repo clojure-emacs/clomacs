@@ -23,15 +23,15 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (defun clomacs-force-symbol-name (some-symbol)
-  "Return lisp symbol `some-symbol' as a string at all costs!"
+  "Return lisp symbol SOME-SYMBOL as a string at all costs!"
   (mapconcat 'char-to-string
              (string-to-list (symbol-name some-symbol)) ""))
 
 (defun clomacs-find-file-in-load-path (search-file-name
                                        &optional fail-on-error)
-  "Return the full path to `search-file-name'.
-`search-file-name' is searching in the emacs `load-path'.
-When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
+  "Return the full path to SEARCH-FILE-NAME.
+SEARCH-FILE-NAME is searching in the emacs `load-path'.
+When FAIL-ON-ERROR is t, raise error if nothing found, return nil otherwise."
   (let ((result nil))
     (if search-file-name
         (dolist (path load-path)
@@ -44,9 +44,9 @@ When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
 
 (defun clomacs-find-file-recursively (search-file-name
                               &optional start-path fail-on-error)
-  "Return the full path to `search-file-name'.
-Recursive searching starts from `start-path'.
-When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
+  "Return the full path to SEARCH-FILE-NAME.
+Recursive searching starts from START-PATH.
+When FAIL-ON-ERROR is t, raise error if nothing found, return nil otherwise."
   (let ((start-path (if start-path start-path "/"))
         (result nil))
     (if search-file-name
@@ -76,9 +76,9 @@ When `fail-on-error' is t, raise error if nothing found, return nil otherwise."
                           &optional ascent-depth fail-on-error)
   "Return the full path to `search-file-name' by moving upwards
 on the directory tree.
-`start-path' is path where searching starts.
-`ascent-depth' is a maximim number of '..' acts on the directory tree.
-When `fail-on-error' is t, raise error if nothing found,return nil otherwise."
+START-PATH is path where searching starts.
+ASCENT-DEPTH is a maximim number of '..' acts on the directory tree.
+When FAIL-ON-ERROR is t, raise error if nothing found,return nil otherwise."
   (let ((ascent-depth (if ascent-depth ascent-depth 0))
         (result nil))
     (if (and start-path search-file-name)
