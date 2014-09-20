@@ -177,7 +177,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
         (error
          (concat "Nrepl is not launched!"))))))
 
-(defun clomacs-get-result (result value type)
+(defun clomacs-get-result (result value type namespace)
   "Parse result of clojure code evaluation from CIDER.
 Handle errors. Handle difference between CIDER versions."
   (let ((val-new (cond
@@ -188,9 +188,13 @@ Handle errors. Handle difference between CIDER versions."
         (error (or (plist-get result :stderr)
                    (nrepl-dict-get result "err")))
       (clomacs-format-result
-       (or
-        (plist-get result value)
-        (nrepl-dict-get result val-new)) type))))
+       (let ((essence-result (or
+                              (plist-get result value)
+                              (nrepl-dict-get result val-new))))
+         (if namespace
+             (substring essence-result 3)
+           essence-result))
+       type))))
 
 (cl-defmacro clomacs-def (el-entity-name
                           cl-entity-name
@@ -211,7 +215,7 @@ Handle errors. Handle difference between CIDER versions."
                        "(require '"
                        (clomacs-force-symbol-name ',namespace) ") "))
                   (clomacs-force-symbol-name ',cl-entity-name)))))
-           (clomacs-get-result result :value ',type)))
+           (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
 (cl-defmacro clomacs-defun (el-func-name
@@ -265,7 +269,8 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
                           (concat namespace-str "/"))
                   cl-func-name-str attrs ")")
                  nil sesstion)))
-           (clomacs-get-result result ,return-value ',return-type))))))
+           (clomacs-get-result
+            result ,return-value ',return-type ',namespace))))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
