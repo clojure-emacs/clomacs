@@ -10,7 +10,7 @@
 Clomacs simplifies call clojure code from Emacs lisp. The purpose is to provide
 a tool for creating mixed elisp-clojure Emacs extensions. It provides a small
 wrapper under [CIDER](https://github.com/clojure-emacs/cider) to reduce
-reiterative code.
+repetitive code.
 
 ## Overview
 There are some requirements to run mixed elisp-clojure code. All the elisp-side
