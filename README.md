@@ -37,12 +37,6 @@ For now, it may by installed by adding `clomacs` folder somewhere in your
 (require 'clomacs)
 ```
 
-Furthermore, all clomacs's dependencies should be in your `~/.m2/` folder. You
-can achieve this by run `lein deps` from the `clomacs/` installation directory:
-```bash
-~/.emacs.d/clomacs/ $ lein deps
-```
-
 ## Usage
 
 ### Simple example
