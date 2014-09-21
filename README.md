@@ -7,40 +7,23 @@
 > ultimate dev environment? "Clomacs" perhaps?
 > * from Emacs isn't for everyone discussion by Anonymous Cow.
 
-Clomacs simplifies call clojure code from emacs lisp. The purpose is to provide
-a tool for creating mixed elisp-clojure emacs extensions.
+Clomacs simplifies call clojure code from Emacs lisp. The purpose is to provide
+a tool for creating mixed elisp-clojure Emacs extensions. It provides a small
+wrapper under [CIDER](https://github.com/clojure-emacs/cider) to reduce
+reiterative code.
 
 ## Overview
-There are some requirements to run mixed elisp-clojure code.
+There are some requirements to run mixed elisp-clojure code. All the elisp-side
+code should be loaded, nREPL must run with all related clojure-side code and
+it's dependencies.
 
-**Since `0.0.2` prefer to launch every library in separate repl.**
-
-### Elisp-side code
-Obviously, all the elisp-side code should be loaded at this point:
-
-1. clomacs elisp code should be loaded:<br/>
-   `(require 'clomacs)`
-2. custom elisp code should be loaded:<br/>
-   `(require '<custom>)`
-
-### Clojure-side code
-The clojure-side code requires the following:
-
-1. nrepl must run.
-2. clomacs clojure-side code should be loaded.
-3. user's java/clojure custom *.jar libraries should be added to the
-   CLASSPATH.
-4. user's custom clojure code should be added to the CLASSPATH.
-5. user's custom clojure code should be loaded.
-
-So, the user of the mixed elisp-clojure lib wants to simple run elisp code
-from the <custom> lib.  But at this point we have the unknown state: probably
-no one of this terms are supplied, or supplied some of them (or even all of
-them).
+So, the user of the mixed elisp-clojure Emacs extension wants to simple run
+elisp code from the extension.
 
 The purpose of the `clomacs-defun` is to wrap clojure function to elisp
-function, that will do all of this verification and loading (if necessary), but
-just once per library, call this clojure function and return it's result.
+function, that will start nREPL if necessary or use existing nREPL of certain
+elisp-clojure Emacs extension, call this clojure function and return it's
+result.
 
 ## Installation
 
@@ -165,19 +148,12 @@ should works.
 
 * [cm-test](https://github.com/kostafey/cm-test)
 * [ejc-sql](https://github.com/kostafey/ejc-sql)
-* [clojure-offline](https://github.com/kostafey/clojure-offline)
 
 ## Requirements:
 
 * [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.
 * [Leiningen](http://leiningen.org) 2.x
 * [CIDER](https://github.com/clojure-emacs/cider)
-* [pomegranate](https://github.com/cemerick/pomegranate)
-
-## TODO
-
-* Unload/reload lib possibility should be added.
-* Ths separate `:namespace` arg in `clomacs-defun` is redundant?
 
 ## License
 
