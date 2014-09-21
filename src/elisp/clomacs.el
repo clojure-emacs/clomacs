@@ -31,16 +31,9 @@
 
 (require 'cl-lib)
 (require 'cider)
-(require 'clomacs-lib)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
-
-(eval-and-compile
-  (defvar clomacs-elisp-path
-    (let ((path (or (locate-library "clomacs") load-file-name)))
-      (and path (file-name-directory path)))
-    "Directory containing the clomacs elisp code."))
 
 (defun clomacs-is-session-here (nrepl-connection-buffer)
   "Return nrepl session for current nrepl-connection buffer.
@@ -52,7 +45,7 @@ Return nil if there is no such buffer or session in it."
            nrepl-session))))
 
 (defun clomacs-get-nrepl-session (library)
-  "Return nrepl session library."
+  "Return nrepl session for library."
   (clomacs-is-session-here
    (get-buffer
     (format nrepl-connection-buffer-name-template
@@ -143,6 +136,11 @@ Return nil if there is no such buffer or session in it."
    '(("clomacs-defun" . font-lock-keyword-face)
      ("clomacs-def" . font-lock-keyword-face))))
 
+(defun clomacs-force-symbol-name (some-symbol)
+  "Return lisp symbol SOME-SYMBOL as a string at all costs!"
+  (mapconcat 'char-to-string
+             (string-to-list (symbol-name some-symbol)) ""))
+
 (defun clomacs-doc (x)) ; dummy definition, real definition is below.
 
 (eval-after-load "clomacs"
@@ -195,6 +193,9 @@ Handle errors. Handle difference between CIDER versions."
              (substring essence-result 3)
            essence-result))
        type))))
+
+(defun clomacs-add-quotes (str)
+  (concat "\"" str "\""))
 
 (cl-defmacro clomacs-def (el-entity-name
                           cl-entity-name
