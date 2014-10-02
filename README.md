@@ -135,8 +135,6 @@ Here is the `cm-test/src` path tree vizualization:
 and run `M-x cm-test-mdarkdown-to-html`.
 
 `<h1>This is a test</h1>` should occurs in the buffer under the original text.
-<br> Even if nrepl is not running or run with unknown CLASSPATH everything
-should works.
 
 ## Projects uses clomacs:
 
