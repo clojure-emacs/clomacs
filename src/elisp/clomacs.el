@@ -189,7 +189,7 @@ Handle errors. Handle difference between CIDER versions."
        (let ((essence-result (or
                               (plist-get result value)
                               (nrepl-dict-get result val-new))))
-         (if namespace
+         (if (and namespace (equal value :value))
              (substring essence-result 3)
            essence-result))
        type))))
