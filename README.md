@@ -149,6 +149,6 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 ## License
 
-Copyright © 2013-2014 Kostafey <kostafey@gmail.com>
+Copyright © 2013-2015 Kostafey <kostafey@gmail.com>
 
 Distributed under the General Public License, version 3.

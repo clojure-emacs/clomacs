@@ -1,6 +1,6 @@
-;;; clomacs.el --- Simplifies emacs lisp interaction with clojure.
+;;; clomacs.el --- Simplifies emacs lisp interaction with clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2014 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2015 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -43,13 +43,6 @@ Return nil if there is no such buffer or session in it."
          (progn
            (set-buffer nrepl-connection-buffer)
            nrepl-session))))
-
-(defun clomacs-get-nrepl-session (library)
-  "Return nrepl session for library."
-  (clomacs-is-session-here
-   (get-buffer
-    (format nrepl-connection-buffer-name-template
-            (concat " " library)))))
 
 (defun clomacs-is-nrepl-runnig (&optional library)
   "Return t if nrepl process is running, nil otherwise."
@@ -219,6 +212,10 @@ Handle errors. Handle difference between CIDER versions."
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
+(defun clomacs-get-current-connection-buffer (lib-name)
+  (format nrepl-repl-buffer-name-template
+          (concat " " lib-name)))
+
 (cl-defmacro clomacs-defun (el-func-name
                             cl-func-name
                             &optional &key
@@ -242,8 +239,6 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
        ,doc
        (clomacs-ensure-nrepl-run ,lib-name)
        (let* ((attrs "")
-              (sesstion (or (if ,lib-name (clomacs-get-nrepl-session ,lib-name))
-                            (nrepl-current-session)))
               (cl-func-name-str (clomacs-force-symbol-name ',cl-func-name))
               (namespace-str (clomacs-force-symbol-name ',namespace))
               (ns-slash-pos (string-match "/" cl-func-name-str))
@@ -261,17 +256,20 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
                                 ((symbolp a) (clomacs-force-symbol-name a))
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
-         (let ((result
-                (nrepl-send-string-sync
-                 (concat
-                  (if ',namespace
-                      (concat "(require '" namespace-str ") "))
-                  "(" (if (and ',namespace (not implicit-ns))
-                          (concat namespace-str "/"))
-                  cl-func-name-str attrs ")")
-                 nil sesstion)))
-           (clomacs-get-result
-            result ,return-value ',return-type ',namespace))))))
+         (let ((nrepl-connection-list
+                (list
+                 (clomacs-get-current-connection-buffer
+                  ,lib-name))))
+           (let ((result
+                  (nrepl-sync-request:eval
+                   (concat
+                    (if ',namespace
+                        (concat "(require '" namespace-str ") "))
+                    "(" (if (and ',namespace (not implicit-ns))
+                            (concat namespace-str "/"))
+                    cl-func-name-str attrs ")"))))
+             (clomacs-get-result
+              result ,return-value ',return-type ',namespace)))))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
@@ -279,22 +277,5 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
    (with-temp-buffer
      (insert-file-contents file-path)
      (buffer-string))))
-
-(clomacs-defun clomacs-use
-               clojure.core/use)
-
-(clomacs-defun clomacs-require
-               clojure.core/require)
-
-(clomacs-defun clomacs-import
-               clojure.core/import)
-
-(clomacs-defun clomacs-in-ns
-               clojure.core/in-ns)
-
-(clomacs-defun clomacs-print
-               clojure.core/print
-               :return-type :string
-               :return-value :stdout)
 
 (provide 'clomacs)
