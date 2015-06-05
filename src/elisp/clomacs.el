@@ -257,9 +257,11 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
          (let ((nrepl-connection-list
-                (list
-                 (clomacs-get-current-connection-buffer
-                  ,lib-name))))
+                (if ,lib-name
+                    (list
+                     (clomacs-get-current-connection-buffer
+                      ,lib-name))
+                  nrepl-connection-list)))
            (let ((result
                   (nrepl-sync-request:eval
                    (concat
