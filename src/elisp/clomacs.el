@@ -49,7 +49,7 @@ Return nil if there is no such buffer or session in it."
   (let ((connections cider-connections))
    (if (and (not library) (> (length connections) 0))
        (nrepl-current-session)
-     (let ((library (or library "localhost")))
+     (let ((library (or library "clomacs")))
        (and
         (> (length connections) 0)
         (reduce
@@ -149,13 +149,13 @@ Return nil if there is no such buffer or session in it."
            (clomacs--doc x)))
      (clomacs-highlight-initialize)))
 
-(defun clomacs-get-doc (doc cl-entity-name cl-entity-type)
+(defun clomacs-get-doc (doc cl-entity-name)
   "Form the emacs-lisp side entity docstring.
 DOC - user-defined docsting.
 CL-ENTITY-NAME - clojure side entity name.
 CL-ENTITY-TYPE - \"value\" or \"function\""
   (if doc doc
-    (concat (format "Wrapped clojure %s: " cl-entity-type)
+    (concat "Wrapped clojure entity:"
             (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
               (if cl-entity-doc (concat "\n" cl-entity-doc)
                 (clomacs-force-symbol-name cl-entity-name))))))
@@ -192,6 +192,32 @@ Handle errors. Handle difference between CIDER versions."
 (defun clomacs-add-quotes (str)
   (concat "\"" str "\""))
 
+(cl-defun clomacs-prepare-vars (cl-entity-name
+                                &optional &key
+                                (doc nil)
+                                (return-type :string)
+                                (return-value :value)
+                                lib-name
+                                namespace)
+  "Prepare intermediate variables for clomacs wrapper macros."
+  (cl-assert (and return-type
+                  (or (functionp return-type)
+                      (member return-type clomacs-possible-return-types)))
+             t
+             (format (concat "Wrong return-type %s! See  C-h v "
+                             "clomacs-possible-return-types")
+                     (clomacs-force-symbol-name return-type)))
+  (let* ((doc (clomacs-get-doc doc cl-entity-name))
+         (cl-entity-name-str (clomacs-force-symbol-name cl-entity-name))
+         (namespace-str (clomacs-force-symbol-name namespace))
+         (ns-slash-pos (string-match "/" cl-entity-name-str))
+         (implicit-ns (if ns-slash-pos
+                          (substring cl-entity-name-str 0 ns-slash-pos)))
+         (cl-entity-full-name (if (and namespace (not implicit-ns))
+                                  (concat namespace-str "/" cl-entity-name-str)
+                                cl-entity-name-str)))
+    (list doc namespace-str cl-entity-full-name)))
+
 (cl-defmacro clomacs-def (el-entity-name
                           cl-entity-name
                           &optional &key
@@ -199,24 +225,31 @@ Handle errors. Handle difference between CIDER versions."
                           (type :string)
                           lib-name
                           namespace)
-  (let ((doc (clomacs-get-doc doc cl-entity-name "value")))
+  "Wrap CL-ENTITY-NAME, evaluated on clojure side by EL-ENTITY-NAME.
+DOC - optional elisp function docstring (when nil it constructed from
+underlying clojure entity docstring if possible).
+TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
+or it may be a custom function (:string by default)."
+  (cl-multiple-value-bind
+      (doc namespace-str cl-entity-full-name)
+      (clomacs-prepare-vars cl-entity-name
+                            :doc doc
+                            :return-type type
+                            :lib-name lib-name
+                            :namespace namespace)
     `(defvar ,el-entity-name
        (progn
          (clomacs-ensure-nrepl-run ,lib-name)
          (let ((result
-                (nrepl-send-string-sync
+                (nrepl-sync-request:eval
                  (concat
                   (if ',namespace
-                      (concat
-                       "(require '"
-                       (clomacs-force-symbol-name ',namespace) ") "))
-                  (clomacs-force-symbol-name ',cl-entity-name)))))
+                      (concat "(require '" ',namespace-str ") ") "")
+                  ',cl-entity-full-name)
+                 (clomacs-get-connection (or ,lib-name "clomacs"))
+                 (cider-current-session))))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
-
-(defun clomacs-get-current-connection-buffer (lib-name)
-  (format nrepl-repl-buffer-name-template
-          (concat " " lib-name)))
 
 (cl-defmacro clomacs-defun (el-func-name
                             cl-func-name
@@ -227,25 +260,22 @@ Handle errors. Handle difference between CIDER versions."
                             lib-name
                             namespace)
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
-DOC - optional elisp function docstring.
-The RETURN-TYPE possible values are listed in the
-CLOMACS-POSSIBLE-RETURN-TYPES, or it may be a function (:string by default).
-The RETURN-VALUE may be :value or :stdout (:value by default)."
-  (if (and return-type
-           (not (functionp return-type))
-           (not (member return-type clomacs-possible-return-types)))
-      (error "Wrong return-type %s! See  C-h v clomacs-possible-return-types"
-             (clomacs-force-symbol-name return-type)))
-  (let ((doc (clomacs-get-doc doc cl-func-name "function")))
+DOC - optional elisp function docstring (when nil it constructed from
+underlying clojure entity docstring if possible).
+RETURN-TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
+or it may be a custom function (:string by default).
+RETURN-VALUE may be :value or :stdout (:value by default)."
+  (cl-multiple-value-bind
+      (doc namespace-str cl-entity-full-name)
+      (clomacs-prepare-vars cl-func-name
+                            :doc doc
+                            :return-type return-type
+                            :lib-name lib-name
+                            :namespace namespace)
     `(defun ,el-func-name (&rest attributes)
        ,doc
        (clomacs-ensure-nrepl-run ,lib-name)
-       (let* ((attrs "")
-              (cl-func-name-str (clomacs-force-symbol-name ',cl-func-name))
-              (namespace-str (clomacs-force-symbol-name ',namespace))
-              (ns-slash-pos (string-match "/" cl-func-name-str))
-              (implicit-ns (if ns-slash-pos
-                               (substring cl-func-name-str 0 ns-slash-pos))))
+       (let* ((attrs ""))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
                                (cond
@@ -262,11 +292,9 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
                 (nrepl-sync-request:eval
                  (concat
                   (if ',namespace
-                      (concat "(require '" namespace-str ") "))
-                  "(" (if (and ',namespace (not implicit-ns))
-                          (concat namespace-str "/"))
-                  cl-func-name-str attrs ")")
-                 (clomacs-get-connection ,lib-name)
+                      (concat "(require '" ',namespace-str ") ") "")
+                  "(" ',cl-entity-full-name attrs ")")
+                 (clomacs-get-connection (or ,lib-name "clomacs"))
                  (cider-current-session))))
            (clomacs-get-result
             result ,return-value ',return-type ',namespace))))))
