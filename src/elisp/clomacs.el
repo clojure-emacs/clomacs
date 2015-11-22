@@ -44,24 +44,26 @@ Return nil if there is no such buffer or session in it."
            (set-buffer nrepl-connection-buffer)
            nrepl-session))))
 
-(defun clomacs-is-nrepl-runnig (&optional library)
+(defun clomacs-get-connection (&optional library)
   "Return t if nrepl process is running, nil otherwise."
-  (if (and (not library) (> (length (nrepl-connection-buffers)) 0))
-      (nrepl-current-session)
-    (let ((library (or library "localhost")))
-      (and
-       (> (length (nrepl-connection-buffers)) 0)
-       (reduce (lambda (x y) (or x y))
-               (mapcar
-                (lambda (buffer-name)
-                  (lexical-let ((buffer (get-buffer buffer-name))
-                                (project-directory (nrepl-project-directory-for
-                                                    (nrepl-current-dir))))
-                    (if (equal buffer-name
-                               (format nrepl-repl-buffer-name-template
-                                       (concat " " library)))
-                        (clomacs-is-session-here buffer))))
-                (nrepl-connection-buffers)))))))
+  (let ((connections cider-connections))
+   (if (and (not library) (> (length connections) 0))
+       (nrepl-current-session)
+     (let ((library (or library "localhost")))
+       (and
+        (> (length connections) 0)
+        (reduce
+         (lambda (x y) (or x y))
+         (mapcar
+          '(lambda (x)
+             (let ((repl-project-name
+                    (cadr (split-string (buffer-name x) " "))))
+               (if (equal (substring repl-project-name
+                                     0
+                                     (- (length repl-project-name) 1) )
+                          library)
+                   x)))
+          cider-connections)))))))
 
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
@@ -83,7 +85,7 @@ Return nil if there is no such buffer or session in it."
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
-          (while (not (clomacs-is-nrepl-runnig library))
+          (while (not (clomacs-get-connection library))
             (sleep-for 0.1)
             (message starting-msg))
           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)
@@ -143,7 +145,7 @@ Return nil if there is no such buffer or session in it."
                     clojure.repl/doc
                     :return-value :stdout)
      (defun clomacs-doc (x)
-       (if (clomacs-is-nrepl-runnig)
+       (if (clomacs-get-connection)
            (clomacs--doc x)))
      (clomacs-highlight-initialize)))
 
@@ -161,7 +163,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 (defun clomacs-ensure-nrepl-run (&optional lib-name)
   "Ensure nrepl is running."
   (when  clomacs-verify-nrepl-on-call
-    (unless (clomacs-is-nrepl-runnig lib-name)
+    (unless (clomacs-get-connection lib-name)
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world - sync nrepl launch
           (clomacs-launch-nrepl lib-name t)
@@ -256,22 +258,18 @@ The RETURN-VALUE may be :value or :stdout (:value by default)."
                                 ((symbolp a) (clomacs-force-symbol-name a))
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
-         (let ((nrepl-connection-list
-                (if ,lib-name
-                    (list
-                     (clomacs-get-current-connection-buffer
-                      ,lib-name))
-                  nrepl-connection-list)))
-           (let ((result
-                  (nrepl-sync-request:eval
-                   (concat
-                    (if ',namespace
-                        (concat "(require '" namespace-str ") "))
-                    "(" (if (and ',namespace (not implicit-ns))
-                            (concat namespace-str "/"))
-                    cl-func-name-str attrs ")"))))
-             (clomacs-get-result
-              result ,return-value ',return-type ',namespace)))))))
+         (let ((result
+                (nrepl-sync-request:eval
+                 (concat
+                  (if ',namespace
+                      (concat "(require '" namespace-str ") "))
+                  "(" (if (and ',namespace (not implicit-ns))
+                          (concat namespace-str "/"))
+                  cl-func-name-str attrs ")")
+                 (clomacs-get-connection ,lib-name)
+                 (cider-current-session))))
+           (clomacs-get-result
+            result ,return-value ',return-type ',namespace))))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
