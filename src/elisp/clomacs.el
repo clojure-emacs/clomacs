@@ -36,15 +36,6 @@
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
 
-(defun clomacs-is-session-here (nrepl-connection-buffer)
-  "Return nrepl session for current nrepl-connection buffer.
-Return nil if there is no such buffer or session in it."
-  (save-excursion
-    (and (buffer-live-p nrepl-connection-buffer)
-         (progn
-           (set-buffer nrepl-connection-buffer)
-           nrepl-session))))
-
 (defun clomacs-get-connection (&optional library)
   "Return t if nrepl process is running, nil otherwise."
   (let ((connections cider-connections))
