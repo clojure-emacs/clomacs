@@ -1,4 +1,4 @@
-;;; clomacs.el --- Simplifies emacs lisp interaction with clojure. -*- lexical-binding: t -*-
+;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
 ;; Copyright (C) 2013-2015 Kostafey <kostafey@gmail.com>
 
@@ -22,11 +22,11 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-;;; Commentary
+;;; Commentary:
 
-;; `clomacs-defun' - core clojure to elisp function wrapper.
+;; `clomacs-defun' - core Clojure to Elisp function wrapper.
 ;;
-;; See README.md for detail description.
+;; See README.md for detailed description.
 
 
 (require 'cl-lib)
