@@ -134,12 +134,12 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 (defun clomacs-ensure-nrepl-run (&optional lib-name)
   "Ensure nrepl is running."
   (when  clomacs-verify-nrepl-on-call
-    (unless (clomacs-get-connection lib-name)
+    (unless (cider-connected-p)
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world - sync nrepl launch
           (clomacs-launch-nrepl lib-name t)
         (error
-         (concat "Nrepl is not launched!"))))))
+         (concat "CIDER is not launched!"))))))
 
 (defun clomacs-get-result (result value type namespace)
   "Parse result of clojure code evaluation from CIDER.
@@ -217,7 +217,7 @@ or it may be a custom function (:string by default)."
                   (if ',namespace
                       (concat "(require '" ',namespace-str ") ") "")
                   ',cl-entity-full-name)
-                 (clomacs-get-connection (or ,lib-name "clomacs"))
+                 (cider-current-connection)
                  (cider-current-session))))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
@@ -265,7 +265,7 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                   (if ',namespace
                       (concat "(require '" ',namespace-str ") ") "")
                   "(" ',cl-entity-full-name attrs ")")
-                 (clomacs-get-connection (or ,lib-name "clomacs"))
+                 (cider-current-connection)
                  (cider-current-session))))
            (clomacs-get-result
             result ,return-value ',return-type ',namespace))))))
