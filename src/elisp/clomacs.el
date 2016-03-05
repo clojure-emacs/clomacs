@@ -47,23 +47,23 @@ Return nil if there is no such buffer or session in it."
 (defun clomacs-get-connection (&optional library)
   "Return t if nrepl process is running, nil otherwise."
   (let ((connections cider-connections))
-   (if (and (not library) (> (length connections) 0))
-       (nrepl-current-session)
-     (let ((library (or library "clomacs")))
-       (and
-        (> (length connections) 0)
-        (reduce
-         (lambda (x y) (or x y))
-         (mapcar
-          '(lambda (x)
-             (let ((repl-project-name
-                    (cadr (split-string (buffer-name x) " "))))
-               (if (equal (substring repl-project-name
-                                     0
-                                     (- (length repl-project-name) 1) )
-                          library)
-                   x)))
-          cider-connections)))))))
+    (if (and (not library) (> (length connections) 0))
+        (nrepl-current-session)
+      (let ((library (or library "clomacs")))
+        (and
+         (> (length connections) 0)
+         (reduce
+          (lambda (x y) (or x y))
+          (mapcar
+           '(lambda (x)
+              (let ((repl-project-name
+                     (cadr (split-string (buffer-name x) " "))))
+                (if (equal (substring repl-project-name
+                                      0
+                                      (- (length repl-project-name) 1) )
+                           library)
+                    x)))
+           cider-connections)))))))
 
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
