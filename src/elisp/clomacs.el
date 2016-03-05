@@ -278,3 +278,5 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
      (buffer-string))))
 
 (provide 'clomacs)
+
+;;; clomacs.el ends here
