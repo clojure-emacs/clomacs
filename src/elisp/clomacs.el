@@ -36,27 +36,6 @@
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
 
-(defun clomacs-get-connection (&optional library)
-  "Return t if nrepl process is running, nil otherwise."
-  (let ((connections cider-connections))
-    (if (and (not library) (> (length connections) 0))
-        (cider-current-session)
-      (let ((library (or library "clomacs")))
-        (and
-         (> (length connections) 0)
-         (reduce
-          (lambda (x y) (or x y))
-          (mapcar
-           '(lambda (x)
-              (let ((repl-project-name
-                     (cadr (split-string (buffer-name x) " "))))
-                (if (equal (substring repl-project-name
-                                      0
-                                      (- (length repl-project-name) 1) )
-                           library)
-                    x)))
-           cider-connections)))))))
-
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
                         "Starting nREPL server for %s..."
@@ -77,7 +56,7 @@
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
-          (while (not (clomacs-get-connection library))
+          (while (not (cider-connected-p))
             (sleep-for 0.1)
             (message starting-msg))
           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)
@@ -137,7 +116,7 @@
                     clojure.repl/doc
                     :return-value :stdout)
      (defun clomacs-doc (x)
-       (if (clomacs-get-connection)
+       (if (cider-connected-p)
            (clomacs--doc x)))
      (clomacs-highlight-initialize)))
 
