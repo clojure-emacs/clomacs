@@ -48,7 +48,7 @@ Return nil if there is no such buffer or session in it."
   "Return t if nrepl process is running, nil otherwise."
   (let ((connections cider-connections))
     (if (and (not library) (> (length connections) 0))
-        (nrepl-current-session)
+        (cider-current-session)
       (let ((library (or library "clomacs")))
         (and
          (> (length connections) 0)
