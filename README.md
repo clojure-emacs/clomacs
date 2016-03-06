@@ -7,22 +7,23 @@
 > ultimate dev environment? "Clomacs" perhaps?
 > * from Emacs isn't for everyone discussion by Anonymous Cow.
 
-Clomacs simplifies call clojure code from Emacs lisp. The purpose is to provide
-a tool for creating mixed elisp-clojure Emacs extensions. It provides a small
+Clomacs simplifies call Clojure code from Emacs lisp. The purpose is to provide
+a tool for creating mixed Elisp-Clojure Emacs extensions. It provides a small
 wrapper under [CIDER](https://github.com/clojure-emacs/cider) to reduce
 repetitive code.
 
 ## Overview
-There are some requirements to run mixed elisp-clojure code. All the elisp-side
-code should be loaded, nREPL must run with all related clojure-side code and
-it's dependencies.
 
-So, the user of the mixed elisp-clojure Emacs extension wants to simple run
-elisp code from the extension.
+There are some requirements to run mixed Elisp-Clojure code. All the Elisp-side
+code should be loaded, nREPL must run with all related Clojure-side code and
+its dependencies.
 
-The purpose of the `clomacs-defun` is to wrap clojure function to elisp
-function, that will start nREPL if necessary or use existing nREPL of certain
-elisp-clojure Emacs extension, call this clojure function and return it's
+So, the user of the mixed Elisp-Clojure Emacs extension wants to simple run
+Elisp code from the extension.
+
+The purpose of the `clomacs-defun` is to wrap Clojure function in a Elisp
+function, that will start CIDER if necessary or use an existing CIDER connection of certain
+Elisp-Clojure Emacs extension, call this Clojure function and return it's
 result.
 
 ## Installation
@@ -32,6 +33,7 @@ required by your lib.
 
 For now, it may by installed by adding `clomacs` folder somewhere in your
 `emacs.d`.
+
 ```lisp
 (add-to-list 'load-path "~/.emacs.d/clomacs/src/elisp/")
 (require 'clomacs)
@@ -48,15 +50,15 @@ For now, it may by installed by adding `clomacs` folder somewhere in your
 (message (get-property "java.version"))
 ```
 
-Here `System/getProperty` is a clojure function and `get-property` is a wrapped
-elisp function.
+Here `System/getProperty` is a Clojure function and `get-property` is a wrapped
+Elisp function.
 
 ### Full-fledged example
 
 The full source code for the following example is here:
 [cm-test](https://github.com/kostafey/cm-test).
 
-**1.** Create new clojure project in a common way:
+**1.** Create new Clojure project in a common way:
 
 ```bash
 lein new cm-test
@@ -80,10 +82,10 @@ lein new cm-test
 **4.** Copy `cm_test` to `src/clj/` folder.<br/>
 **5.** Add some code, using markdown lib in the `src/clj/cm_test/core.clj` file:
 
-```clojure
+```Clojure
 (ns cm-test.core
   (:use markdown.core))
-  
+
 (defn my-md-to-html-string
   "Call some function from the dependency."
   [x]
@@ -100,8 +102,8 @@ lein new cm-test
                cm-test.core/my-md-to-html-string
                :lib-name "cm-test"
                :namespace cm-test.core
-               :doc "Convert markdown to html via clojure lib.")
-               
+               :doc "Convert markdown to html via Clojure lib.")
+
 (defun cm-test-mdarkdown-to-html (beg end)
   "Add to the selected markdown text it's html representation."
   (interactive "r")
@@ -111,7 +113,7 @@ lein new cm-test
     (insert
      (concat "\n" (cm-test-md-to-html-wrapper
                    (buffer-substring beg end))))))
-                   
+
 (provide 'cm-test)
 ```
 
@@ -143,8 +145,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 ## Requirements:
 
-* [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.
-* [Leiningen](http://leiningen.org) 2.x
+* [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.3+.
 * [CIDER](https://github.com/clojure-emacs/cider)
 
 ## License
