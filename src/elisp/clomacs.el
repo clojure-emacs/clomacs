@@ -1,6 +1,6 @@
 ;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2015 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2016 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -36,6 +36,27 @@
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
 
+(defun clomacs-get-connection (&optional library)
+  "Return t if nrepl process is running, nil otherwise."
+  (let ((connections cider-connections))
+    (if (and (not library) (> (length connections) 0))
+        (cider-current-session)
+      (let ((library (or library "clomacs")))
+        (and
+         (> (length connections) 0)
+         (reduce
+          (lambda (x y) (or x y))
+          (mapcar
+           '(lambda (x)
+              (let ((repl-project-name
+                     (cadr (split-string (buffer-name x) " "))))
+                (if (equal (substring repl-project-name
+                                      0
+                                      (- (length repl-project-name) 1) )
+                           library)
+                    x)))
+           cider-connections)))))))
+
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
                         "Starting nREPL server for %s..."
@@ -56,7 +77,7 @@
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
           (setq cider-repl-pop-to-buffer-on-connect nil)
-          (while (not (cider-connected-p))
+          (while (not (clomacs-get-connection library))
             (sleep-for 0.1)
             (message starting-msg))
           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)
@@ -116,7 +137,7 @@
                     clojure.repl/doc
                     :return-value :stdout)
      (defun clomacs-doc (x)
-       (if (cider-connected-p)
+       (if (clomacs-get-connection)
            (clomacs--doc x)))
      (clomacs-highlight-initialize)))
 
@@ -134,7 +155,7 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 (defun clomacs-ensure-nrepl-run (&optional lib-name)
   "Ensure nrepl is running."
   (when  clomacs-verify-nrepl-on-call
-    (unless (cider-connected-p)
+    (unless (clomacs-get-connection lib-name)
       (if clomacs-autoload-nrepl-on-call
           ;; Raise up the world - sync nrepl launch
           (clomacs-launch-nrepl lib-name t)
@@ -217,7 +238,7 @@ or it may be a custom function (:string by default)."
                   (if ',namespace
                       (concat "(require '" ',namespace-str ") ") "")
                   ',cl-entity-full-name)
-                 (cider-current-connection)
+                 (clomacs-get-connection (or ,lib-name "clomacs"))
                  (cider-current-session))))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
@@ -265,7 +286,7 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                   (if ',namespace
                       (concat "(require '" ',namespace-str ") ") "")
                   "(" ',cl-entity-full-name attrs ")")
-                 (cider-current-connection)
+                 (clomacs-get-connection (or ,lib-name "clomacs"))
                  (cider-current-session))))
            (clomacs-get-result
             result ,return-value ',return-type ',namespace))))))

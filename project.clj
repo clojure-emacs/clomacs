@@ -4,6 +4,6 @@
   :license {:name "General Public License 3"
             :url "http://www.gnu.org/licenses/gpl-3.0.html"}
   :test-paths ["test/clj"]
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  ;; Used for clomacs self-testing.
                  [markdown-clj "0.9.47"]])
