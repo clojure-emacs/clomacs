@@ -35,27 +35,39 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
+(defvar clomacs-default-project "localhost")
 
 (defun clomacs-get-connection (&optional library)
-  "Return t if nrepl process is running, nil otherwise."
+  "Return buffer with nREPL process related to LIBRARY.
+If LIBRARY is nil, attempts to use `clomacs-default-project' and \"clomacs\"
+If can't find any nREPL process return nil."
   (let ((connections cider-connections))
     (if (and (not library) (> (length connections) 0))
-        (cider-current-session)
-      (let ((library (or library "clomacs")))
+        (cider-current-connection)
+      (let ((library (or library clomacs-default-project)))
         (and
          (> (length connections) 0)
          (cl-reduce
           (lambda (x y) (or x y))
           (mapcar
-           '(lambda (x)
-              (let ((repl-project-name
-                     (cadr (split-string (buffer-name x) " "))))
-                (if (equal (substring repl-project-name
-                                      0
-                                      (- (length repl-project-name) 1) )
-                           library)
-                    x)))
+           (lambda (x)
+             (let* ((repl-project-name
+                     (cadr (split-string (buffer-name x) " ")))
+                    (repl-cut-project-name
+                     (substring repl-project-name
+                                0
+                                (- (length repl-project-name) 1))))
+               (if (or (equal repl-cut-project-name library)
+                       (equal repl-cut-project-name "clomacs"))
+                   x)))
            cider-connections)))))))
+
+(defun clomacs-get-session (connection)
+  "Return current session for this CONNECTION."
+  (assert connection)
+  (save-excursion
+    (set-buffer connection)
+    (cider-current-session)))
 
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
@@ -120,8 +132,8 @@
 (defun clomacs-highlight-initialize ()
   (font-lock-add-keywords
    'emacs-lisp-mode
-   '(("clomacs-defun" . font-lock-keyword-face)
-     ("clomacs-def" . font-lock-keyword-face))))
+   '(("clomacs-defun\\b" . font-lock-keyword-face)
+     ("clomacs-def\\b" . font-lock-keyword-face))))
 
 (defun clomacs-force-symbol-name (some-symbol)
   "Return lisp symbol SOME-SYMBOL as a string at all costs!"
@@ -232,14 +244,16 @@ or it may be a custom function (:string by default)."
     `(defvar ,el-entity-name
        (progn
          (clomacs-ensure-nrepl-run ,lib-name)
-         (let ((result
-                (nrepl-sync-request:eval
-                 (concat
-                  (if ',namespace
-                      (concat "(require '" ',namespace-str ") ") "")
-                  ',cl-entity-full-name)
-                 (clomacs-get-connection (or ,lib-name "clomacs"))
-                 (cider-current-session))))
+         (let* ((connection (clomacs-get-connection ,lib-name))
+                (session (clomacs-get-session connection))
+                (result
+                 (nrepl-sync-request:eval
+                  (concat
+                   (if ',namespace
+                       (concat "(require '" ',namespace-str ") ") "")
+                   ',cl-entity-full-name)
+                  connection
+                  session)))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
@@ -280,14 +294,16 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                                 ((symbolp a) (clomacs-force-symbol-name a))
                                 (t (replace-regexp-in-string
                                     "\\\\." "." (format "'%S" a)))))))
-         (let ((result
-                (nrepl-sync-request:eval
-                 (concat
-                  (if ',namespace
-                      (concat "(require '" ',namespace-str ") ") "")
-                  "(" ',cl-entity-full-name attrs ")")
-                 (clomacs-get-connection (or ,lib-name "clomacs"))
-                 (cider-current-session))))
+         (let* ((connection (clomacs-get-connection ,lib-name))
+                (session (clomacs-get-session connection))
+                (result
+                 (nrepl-sync-request:eval
+                  (concat
+                   (if ',namespace
+                       (concat "(require '" ',namespace-str ") ") "")
+                   "(" ',cl-entity-full-name attrs ")")
+                  connection
+                  session)))
            (clomacs-get-result
             result ,return-value ',return-type ',namespace))))))
 
