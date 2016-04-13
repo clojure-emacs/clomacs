@@ -6,7 +6,7 @@
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.2
-;; Package-Requires: ((Emacs "24.3") (cider "0.11"))
+;; Package-Requires: ((emacs "24.3") (cider "0.11"))
 
 ;; This file is not part of GNU Emacs.
 
