@@ -103,7 +103,7 @@
     (cond
      ((functionp return-type) (funcall return-type raw-string))
      ((eq return-type :string) return-string)
-     ((eq return-type :int) (string-to-int return-string))
+     ((eq return-type :int) (string-to-number return-string))
      ((eq return-type :number) (string-to-number return-string))
      ((eq return-type :list) (read raw-string))
      ((eq return-type :char) (string-to-char return-string))
