@@ -44,7 +44,7 @@
       (let ((library (or library "clomacs")))
         (and
          (> (length connections) 0)
-         (reduce
+         (cl-reduce
           (lambda (x y) (or x y))
           (mapcar
            '(lambda (x)
@@ -98,7 +98,7 @@
     raw-string))
 
 (defun clomacs-format-result (raw-string return-type)
-  (assert return-type)
+  (cl-assert return-type)
   (let ((return-string (clomacs-strip-string raw-string)))
     (cond
      ((functionp return-type) (funcall return-type raw-string))
