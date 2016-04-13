@@ -41,6 +41,10 @@ For now, it may by installed by adding `clomacs` folder somewhere in your
 
 ## Usage
 
+### Prerequisites
+
+`clomacs` requires Clojure 1.7+.
+
 ### Simple example
 
 ```lisp
