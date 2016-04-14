@@ -1,3 +1,6 @@
+[![License GPL 3](https://img.shields.io/badge/license-GPL_3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
+[![MELPA](https://melpa.org/packages/clomacs-badge.svg)](https://melpa.org/#/clomacs)
+
 # clomacs
 
 <img src="https://dl.dropboxusercontent.com/u/820526/clomacs.png"
