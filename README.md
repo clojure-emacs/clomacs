@@ -31,16 +31,19 @@ result.
 
 ## Installation
 
-Clomacs should be added to the MELPA after some testing. So, it will be simple
-required by your lib.
-
-For now, it may by installed by adding `clomacs` folder somewhere in your
-`emacs.d`.
+Add MELPA (if not yet) to your package-archives list:
 
 ```lisp
-(add-to-list 'load-path "~/.emacs.d/clomacs/src/elisp/")
-(require 'clomacs)
+(require 'package)
+(add-to-list 'package-archives
+             '("melpa" . "http://melpa.milkbox.net/packages/"))
+(package-initialize)
 ```
+
+Then you can install clomacs with the following command:
+
+<kbd>M-x package-install [RET] clomacs [RET]</kbd>
+
 
 ## Usage
 
