@@ -47,14 +47,14 @@
          (cl-reduce
           (lambda (x y) (or x y))
           (mapcar
-           '(lambda (x)
-              (let ((repl-project-name
-                     (cadr (split-string (buffer-name x) " "))))
-                (if (equal (substring repl-project-name
-                                      0
-                                      (- (length repl-project-name) 1) )
-                           library)
-                    x)))
+           (lambda (x)
+             (let ((repl-project-name
+                    (cadr (split-string (buffer-name x) " "))))
+               (if (equal (substring repl-project-name
+                                     0
+                                     (- (length repl-project-name) 1) )
+                          library)
+                   x)))
            cider-connections)))))))
 
 (defun clomacs-launch-nrepl (library &optional sync)
