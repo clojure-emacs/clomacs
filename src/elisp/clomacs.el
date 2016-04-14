@@ -35,32 +35,37 @@
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
-(defvar clomacs-default-project "localhost")
+
+(defun clomacs-search-connection (repl-buffer-project-name)
+  "Search nREPL connection buffer.
+E.g. if you want to find \"*cider-repl clomacs*\" you shold pass
+REPL-BUFFER-PROJECT-NAME \"clomacs\"."
+  (cl-reduce
+   (lambda (x y) (or x y))
+   (mapcar
+    (lambda (x)
+      (let* ((conn (car cider-connections))
+             (repl-project-name-star
+              (cadr (split-string (buffer-name conn) " ")))
+             (current-repl-project-name
+              (substring repl-project-name-star
+                         0
+                         (- (length repl-project-name-star) 1))))
+        (if (equal current-repl-project-name repl-buffer-project-name)
+            x)))
+    cider-connections)))
 
 (defun clomacs-get-connection (&optional library)
   "Return buffer with nREPL process related to LIBRARY.
-If LIBRARY is nil, attempts to use `clomacs-default-project' and \"clomacs\"
+If LIBRARY is nil, attempts to use \"clomacs\", \"localhost\" or
+any current connection.
 If can't find any nREPL process return nil."
-  (let ((connections cider-connections))
-    (if (and (not library) (> (length connections) 0))
-        (cider-current-connection)
-      (let ((library (or library clomacs-default-project)))
-        (and
-         (> (length connections) 0)
-         (cl-reduce
-          (lambda (x y) (or x y))
-          (mapcar
-           (lambda (x)
-             (let* ((repl-project-name
-                     (cadr (split-string (buffer-name x) " ")))
-                    (repl-cut-project-name
-                     (substring repl-project-name
-                                0
-                                (- (length repl-project-name) 1))))
-               (if (or (equal repl-cut-project-name library)
-                       (equal repl-cut-project-name "clomacs"))
-                   x)))
-           cider-connections)))))))
+  (if (> (length cider-connections) 0)
+      (if library
+          (clomacs-search-connection library)
+        (or (clomacs-search-connection "clomacs")
+            (clomacs-search-connection "localhost")
+            (cider-current-connection)))))
 
 (defun clomacs-get-session (connection)
   "Return current session for this CONNECTION."
