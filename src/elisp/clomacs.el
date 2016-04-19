@@ -115,6 +115,7 @@ If can't find any nREPL process return nil."
     raw-string))
 
 (defun clomacs-format-result (raw-string return-type)
+  "Format Elisp representation of Clojure evaluation result."
   (cl-assert return-type)
   (let ((return-string (clomacs-strip-string raw-string)))
     (cond
@@ -125,6 +126,45 @@ If can't find any nREPL process return nil."
      ((eq return-type :list) (read raw-string))
      ((eq return-type :char) (string-to-char return-string))
      ((eq return-type :vector) (string-to-vector return-string)))))
+
+(declare clomacs-format-arg)
+
+(defun clomacs-plist-p (object)
+  "Return t if OBJECT is a plist, otherwise, return nil."
+  (when (and (listp object)
+             (car object)
+             (listp (car object))
+             (not (listp (cdr (car object)))))
+    t))
+
+(defun clomacs-plist-to-map (lst)
+  "Build string representation of Clojure map from Elisp plist LST."
+  (let ((tail (car (last lst))))
+   (concat
+    "{"
+    (cl-reduce
+     (lambda (acc pair)
+       (concat acc
+               (clomacs-format-arg (car pair)) " "
+               (clomacs-format-arg (cdr pair))
+               (if (eq pair tail) "" " ")))
+     lst
+     :initial-value "")
+    "}")))
+
+(defun clomacs-format-arg (a)
+  "Format Clojure representation of Elisp argument."
+  (cond
+   ((numberp a) (number-to-string a))
+   ((stringp a) (clomacs-add-quotes a))
+   ((booleanp a) (if a "true" "false"))
+   ((clomacs-plist-p a) (clomacs-plist-to-map a))
+   ((and (listp a) (equal (car a) 'quote))
+    (concat "'" (clomacs-force-symbol-name
+                 (cadr a))))
+   ((symbolp a) (clomacs-force-symbol-name a))
+   (t (replace-regexp-in-string
+       "\\\\." "." (format "'%S" a)))))
 
 (defvar clomacs-possible-return-types
   (list :string
@@ -289,16 +329,7 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
        (let* ((attrs ""))
          (dolist (a attributes)
            (setq attrs (concat attrs " "
-                               (cond
-                                ((numberp a) (number-to-string a))
-                                ((stringp a) (clomacs-add-quotes a))
-                                ((booleanp a) (if a "true" "false"))
-                                ((and (listp a) (equal (car a) 'quote))
-                                 (concat "'" (clomacs-force-symbol-name
-                                              (cadr a))))
-                                ((symbolp a) (clomacs-force-symbol-name a))
-                                (t (replace-regexp-in-string
-                                    "\\\\." "." (format "'%S" a)))))))
+                               (clomacs-format-arg a))))
          (let* ((connection (clomacs-get-connection ,lib-name))
                 (session (clomacs-get-session connection))
                 (result
