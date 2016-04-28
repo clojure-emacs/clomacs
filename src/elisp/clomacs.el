@@ -38,20 +38,18 @@
 
 (defun clomacs-search-connection (repl-buffer-project-name)
   "Search nREPL connection buffer.
-E.g. if you want to find \"*cider-repl clomacs*\" you shold pass
+E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
 REPL-BUFFER-PROJECT-NAME \"clomacs\"."
   (cl-reduce
    (lambda (x y) (or x y))
    (mapcar
     (lambda (x)
-      (let* ((conn (car cider-connections))
-             (repl-project-name-star
-              (cadr (split-string (buffer-name conn) " ")))
-             (current-repl-project-name
-              (substring repl-project-name-star
-                         0
-                         (- (length repl-project-name-star) 1))))
-        (if (equal current-repl-project-name repl-buffer-project-name)
+      (let ((this-repl
+             (cadr (split-string (buffer-name (car cider-connections)) " "))))
+        (if (string= repl-buffer-project-name
+                     (substring this-repl
+                                0
+                                (length repl-buffer-project-name)))
             x)))
     cider-connections)))
 
