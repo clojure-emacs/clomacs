@@ -68,7 +68,7 @@ If can't find any nREPL process return nil."
 (defun clomacs-get-session (connection)
   "Return current session for this CONNECTION."
   (assert connection)
-  (save-excursion
+  (with-current-buffer
     (set-buffer connection)
     (cider-current-session)))
 
@@ -81,8 +81,7 @@ If can't find any nREPL process return nil."
          (is-opened (if lib-file (find-buffer-visiting lib-file)))
          (lib-buff (or is-opened
                        (if lib-file
-                           (find-file-noselect lib-file))))
-         (old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
+                           (find-file-noselect lib-file)))))
     ;; simple run lein
     (if lib-buff
         (with-current-buffer lib-buff
@@ -183,18 +182,7 @@ If can't find any nREPL process return nil."
   (mapconcat 'char-to-string
              (string-to-list (symbol-name some-symbol)) ""))
 
-(defun clomacs-doc (x)) ; dummy definition, real definition is below.
-
-(eval-after-load "clomacs"
-  '(progn
-     ;; Should be last `clomacs-defun'
-     (clomacs-defun clomacs--doc
-                    clojure.repl/doc
-                    :return-value :stdout)
-     (defun clomacs-doc (x)
-       (if (clomacs-get-connection)
-           (clomacs--doc x)))
-     (clomacs-highlight-initialize)))
+(declare clomacs-doc (_)) ; dummy definition, real definition is below.
 
 (defun clomacs-get-doc (doc cl-entity-name)
   "Form the emacs-lisp side entity docstring.
@@ -243,8 +231,6 @@ Handle errors. Handle difference between CIDER versions."
                                 &optional &key
                                 (doc nil)
                                 (return-type :string)
-                                (return-value :value)
-                                lib-name
                                 namespace)
   "Prepare intermediate variables for clomacs wrapper macros."
   (cl-assert (and return-type
@@ -281,8 +267,6 @@ or it may be a custom function (:string by default)."
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-entity-name
                             :doc doc
-                            :return-type type
-                            :lib-name lib-name
                             :namespace namespace)
     `(defvar ,el-entity-name
        (progn
@@ -318,8 +302,6 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-func-name
                             :doc doc
-                            :return-type return-type
-                            :lib-name lib-name
                             :namespace namespace)
     `(defun ,el-func-name (&rest attributes)
        ,doc
@@ -343,10 +325,27 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
-  (nrepl-send-string-sync
-   (with-temp-buffer
-     (insert-file-contents file-path)
-     (buffer-string))))
+  (let* ((connection (cider-current-connection))
+         (session (clomacs-get-session connection)))
+    (nrepl-sync-request:eval
+     (with-temp-buffer
+       (insert-file-contents file-path)
+       (buffer-string))
+     connection
+     session)))
+
+;; Should be last `clomacs-defun'
+(clomacs-defun clomacs--doc
+               clojure.repl/doc
+               :return-value :stdout)
+
+(defun clomacs-doc (x)
+       (if (clomacs-get-connection)
+           (clomacs--doc x)))
+
+(eval-after-load "clomacs"
+  '(progn
+     (clomacs-highlight-initialize)))
 
 (provide 'clomacs)
 
