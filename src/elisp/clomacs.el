@@ -182,7 +182,18 @@ If can't find any nREPL process return nil."
   (mapconcat 'char-to-string
              (string-to-list (symbol-name some-symbol)) ""))
 
-(declare clomacs-doc (_)) ; dummy definition, real definition is below.
+(eval-after-load "clomacs"
+  '(progn
+     (clomacs-highlight-initialize)
+
+     ;; Should be last `clomacs-defun'
+     (clomacs-defun clomacs--doc
+                    clojure.repl/doc
+                    :return-value :stdout)
+
+     (defun clomacs-doc (x)
+       (if (clomacs-get-connection)
+           (clomacs--doc x)))))
 
 (defun clomacs-get-doc (doc cl-entity-name)
   "Form the emacs-lisp side entity docstring.
@@ -191,7 +202,8 @@ CL-ENTITY-NAME - clojure side entity name.
 CL-ENTITY-TYPE - \"value\" or \"function\""
   (if doc doc
     (concat "Wrapped clojure entity:"
-            (let ((cl-entity-doc (clomacs-doc cl-entity-name)))
+            (let ((cl-entity-doc (when (fboundp 'clomacs-doc)
+                                   (clomacs-doc cl-entity-name))))
               (if cl-entity-doc (concat "\n" cl-entity-doc)
                 (clomacs-force-symbol-name cl-entity-name))))))
 
@@ -333,19 +345,6 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
        (buffer-string))
      connection
      session)))
-
-;; Should be last `clomacs-defun'
-(clomacs-defun clomacs--doc
-               clojure.repl/doc
-               :return-value :stdout)
-
-(defun clomacs-doc (x)
-       (if (clomacs-get-connection)
-           (clomacs--doc x)))
-
-(eval-after-load "clomacs"
-  '(progn
-     (clomacs-highlight-initialize)))
 
 (provide 'clomacs)
 
