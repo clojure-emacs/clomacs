@@ -183,19 +183,19 @@ If can't find any nREPL process return nil."
              (string-to-list (symbol-name some-symbol)) ""))
 
 (eval-after-load "clomacs"
-  '(progn
-     (clomacs-highlight-initialize)
+  (lambda ()
+    (clomacs-highlight-initialize)
 
-     (defvar clomacs--doc)
+    (defvar clomacs--doc)
 
-     ;; Should be last `clomacs-defun'
-     (clomacs-defun clomacs--doc
-                    clojure.repl/doc
-                    :return-value :stdout)
+    ;; Should be last `clomacs-defun'
+    (clomacs-defun clomacs--doc
+                   clojure.repl/doc
+                   :return-value :stdout)
 
-     (defun clomacs-doc (x)
-       (if (clomacs-get-connection)
-           (clomacs--doc x)))))
+    (defun clomacs-doc (x)
+      (if (clomacs-get-connection)
+          (clomacs--doc x)))))
 
 (defun clomacs-get-doc (doc cl-entity-name)
   "Form the emacs-lisp side entity docstring.
