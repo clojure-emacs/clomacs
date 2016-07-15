@@ -186,6 +186,8 @@ If can't find any nREPL process return nil."
   '(progn
      (clomacs-highlight-initialize)
 
+     (defvar clomacs--doc)
+
      ;; Should be last `clomacs-defun'
      (clomacs-defun clomacs--doc
                     clojure.repl/doc
