@@ -3,6 +3,14 @@
   (clomacs-defun summ-1 +)
   (should (equal (summ-1 2 3) "5"))
 
+  (clomacs-defun summ-async +
+                 :call-type :async
+                 :callback (lambda (result)
+                             (message "Result: %s" result)
+                             result))
+
+  (summ-async 3 5 9)
+
   (clomacs-defun summ-2 + :return-type :number)
   (should (equal (summ-2 2 3) 5))
 

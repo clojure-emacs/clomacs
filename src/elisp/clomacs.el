@@ -114,15 +114,16 @@ If can't find any nREPL process return nil."
 (defun clomacs-format-result (raw-string return-type)
   "Format Elisp representation of Clojure evaluation result."
   (cl-assert return-type)
-  (let ((return-string (clomacs-strip-string raw-string)))
-    (cond
-     ((functionp return-type) (funcall return-type raw-string))
-     ((eq return-type :string) return-string)
-     ((eq return-type :int) (string-to-number return-string))
-     ((eq return-type :number) (string-to-number return-string))
-     ((eq return-type :list) (read raw-string))
-     ((eq return-type :char) (string-to-char return-string))
-     ((eq return-type :vector) (string-to-vector return-string)))))
+  (if raw-string
+      (let ((return-string (clomacs-strip-string raw-string)))
+        (cond
+         ((functionp return-type) (funcall return-type raw-string))
+         ((eq return-type :string) return-string)
+         ((eq return-type :int) (string-to-number return-string))
+         ((eq return-type :number) (string-to-number return-string))
+         ((eq return-type :list) (read raw-string))
+         ((eq return-type :char) (string-to-char return-string))
+         ((eq return-type :vector) (string-to-vector return-string))))))
 
 (declare clomacs-format-arg)
 
@@ -301,12 +302,16 @@ or it may be a custom function (:string by default)."
 (cl-defmacro clomacs-defun (el-func-name
                             cl-func-name
                             &optional &key
+                            (call-type :sync)
+                            (callback nil)
                             (doc nil)
                             (return-type :string)
                             (return-value :value)
                             lib-name
                             namespace)
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
+CALL-TYPE - call Clojure side :sync or :async.
+CALLBACK - callback function for :async CALL-TYPE case.
 DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
 RETURN-TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
@@ -326,16 +331,26 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                                (clomacs-format-arg a))))
          (let* ((connection (clomacs-get-connection ,lib-name))
                 (session (clomacs-get-session connection))
-                (result
-                 (nrepl-sync-request:eval
-                  (concat
-                   (if ',namespace
-                       (concat "(require '" ',namespace-str ") ") "")
-                   "(" ',cl-entity-full-name attrs ")")
-                  connection
-                  session)))
-           (clomacs-get-result
-            result ,return-value ',return-type ',namespace))))))
+                (request (concat
+                          (if ',namespace
+                              (concat "(require '" ',namespace-str ") ") "")
+                          "(" ',cl-entity-full-name attrs ")")))
+           (if (equal ,call-type :async)
+               (nrepl-request:eval
+                request
+                (lambda (result)
+                  (if ,callback
+                      (,callback (clomacs-get-result
+                              result
+                              ,return-value ',return-type ',namespace))))
+                connection
+                session)
+             (clomacs-get-result
+              (nrepl-sync-request:eval
+               request
+               connection
+               session)
+              ,return-value ',return-type ',namespace)))))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
