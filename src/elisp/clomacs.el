@@ -340,9 +340,11 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                 request
                 (lambda (result)
                   (if ,callback
-                      (,callback (clomacs-get-result
-                              result
-                              ,return-value ',return-type ',namespace))))
+                      (let ((el-result (clomacs-get-result
+                                        result
+                                        ,return-value ',return-type ',namespace)))
+                        (if el-result
+                            (,callback el-result)))))
                 connection
                 session)
              (clomacs-get-result
