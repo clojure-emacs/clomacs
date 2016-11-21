@@ -157,6 +157,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 * [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.3+.
 * [CIDER](https://github.com/clojure-emacs/cider)
+* [s.el](https://github.com/magnars/s.el)
 
 ## License
 

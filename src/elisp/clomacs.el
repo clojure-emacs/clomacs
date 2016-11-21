@@ -6,7 +6,7 @@
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.2
-;; Package-Requires: ((emacs "24.3") (cider "0.11"))
+;; Package-Requires: ((emacs "24.3") (cider "0.11") (s "1.10.0")
 
 ;; This file is not part of GNU Emacs.
 
@@ -32,6 +32,7 @@
 
 (require 'cl-lib)
 (require 'cider)
+(require 's)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
@@ -45,7 +46,9 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
    (mapcar
     (lambda (x)
       (let ((this-repl
-             (cadr (split-string (buffer-name (car cider-connections)) " "))))
+             (s-chop-suffix
+              "*"
+              (cadr (split-string (buffer-name (car cider-connections)) " ")))))
         (if (string= repl-buffer-project-name
                      (substring this-repl
                                 0
