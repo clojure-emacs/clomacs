@@ -49,10 +49,13 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
              (s-chop-suffix
               "*"
               (cadr (split-string (buffer-name (car cider-connections)) " ")))))
-        (if (string= repl-buffer-project-name
+        (if (and
+             (>= (length this-repl)
+                 (length repl-buffer-project-name))
+             (string= repl-buffer-project-name
                      (substring this-repl
                                 0
-                                (length repl-buffer-project-name)))
+                                (length repl-buffer-project-name))))
             x)))
     cider-connections)))
 
