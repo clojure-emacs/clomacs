@@ -1,3 +1,25 @@
+(require 'cl)
+
+(cl-labels ((concat-path (&rest folders)
+                         ;; Concatenate list of folders to the path.
+                         (let ((path))
+                           (dolist (folder folders)
+                             (if folder
+                                 (setq path (expand-file-name folder path))))
+                           path)))
+  (let ((current-directory (file-name-directory (or load-file-name ""))))
+    (setq clomacs-test-path (expand-file-name "." current-directory))
+    (setq clomacs-root-path (concat-path current-directory
+                                         ".." ".." "src" "elisp"))))
+
+(add-to-list 'load-path clomacs-root-path)
+(add-to-list 'load-path clomacs-test-path)
+
+(when (require 'undercover nil t)
+  (undercover "*.el"))
+
+(require 'clomacs)
+
 (ert-deftest clomacs-defun-test ()
   "Tests for `clomacs-defun'."
   (clomacs-defun summ-1 +)
@@ -42,3 +64,6 @@
   (should (equal
            (clomacs-test-md-wrapper "# This is a test")
            "<h1>This is a test</h1>")))
+
+(if noninteractive
+    (ert-run-tests-batch-and-exit t))

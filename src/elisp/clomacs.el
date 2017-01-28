@@ -291,15 +291,13 @@ or it may be a custom function (:string by default)."
        (progn
          (clomacs-ensure-nrepl-run ,lib-name)
          (let* ((connection (clomacs-get-connection ,lib-name))
-                (session (clomacs-get-session connection))
                 (result
                  (nrepl-sync-request:eval
                   (concat
                    (if ',namespace
                        (concat "(require '" ',namespace-str ") ") "")
                    ',cl-entity-full-name)
-                  connection
-                  session)))
+                  connection)))
            (clomacs-get-result result :value ',type ',namespace)))
        ,doc)))
 
@@ -335,7 +333,6 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
            (setq attrs (concat attrs " "
                                (clomacs-format-arg a))))
          (let* ((connection (clomacs-get-connection ,lib-name))
-                (session (clomacs-get-session connection))
                 (request (concat
                           (if ',namespace
                               (concat "(require '" ',namespace-str ") ") "")
@@ -350,13 +347,11 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
                                         ,return-value ',return-type ',namespace)))
                         (if el-result
                             (,callback el-result)))))
-                connection
-                session)
+                connection)
              (clomacs-get-result
               (nrepl-sync-request:eval
                request
-               connection
-               session)
+               connection)
               ,return-value ',return-type ',namespace)))))))
 
 (defun clomacs-load-file (file-path)
