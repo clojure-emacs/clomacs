@@ -1,6 +1,6 @@
 ;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2016 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2017 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs

@@ -161,7 +161,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 ## License
 
-Copyright © 2013-2016 Kostafey <kostafey@gmail.com> and
+Copyright © 2013-2017 Kostafey <kostafey@gmail.com> and
 [contributors](https://github.com/clojure-emacs/clomacs/graphs/contributors)
 
 Distributed under the General Public License, version 3.
