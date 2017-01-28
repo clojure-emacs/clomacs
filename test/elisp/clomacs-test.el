@@ -16,8 +16,7 @@
 (add-to-list 'load-path clomacs-test-path)
 
 (when (require 'undercover nil t)
-  (undercover "*.el"))
-
+  (undercover "src/elisp/*.el"))
 (require 'clomacs)
 
 (ert-deftest clomacs-defun-test ()
