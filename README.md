@@ -5,7 +5,7 @@
 
 # clomacs
 
-<img src="https://dl.dropboxusercontent.com/u/820526/clomacs.png"
+<img src="http://4.bp.blogspot.com/-xkvH6ps4Rk8/Unj5u2sKj0I/AAAAAAAAAHQ/lVi6e2EpnmU/s1600/clomacs.png"
  alt="Clomacs logo" align="right" />
 
 > Emacs is a Lisp. Clojure is a Lisp. Can the two be put together to form the
