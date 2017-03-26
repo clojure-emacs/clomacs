@@ -19,6 +19,9 @@
   (undercover "src/elisp/*.el"))
 (require 'clomacs)
 
+(setq cider-boot-parameters "repl -s -H localhost wait")
+(setq cider-lein-parameters "repl :headless :host localhost")
+
 (ert-deftest clomacs-defun-test ()
   "Tests for `clomacs-defun'."
   (clomacs-defun summ-1 +)
