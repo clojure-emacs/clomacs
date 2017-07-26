@@ -38,7 +38,7 @@
   (clomacs-defun summ-2 + :return-type :number)
   (should (equal (summ-2 2 3) 5))
 
-  (clomacs-defun summ-3 + :return-type string-to-int)
+  (clomacs-defun summ-3 + :return-type string-to-number)
   (should (equal (summ-3 2 3) 5))
 
   (clomacs-defun str str)
