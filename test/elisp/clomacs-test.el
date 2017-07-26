@@ -57,6 +57,16 @@
   "Integration test for `clomacs'."
   (require 'clomacs)
 
+  (clomacs-defun clomacs-test-text-with-newlines
+                 text-with-newlines
+                 :lib-name "clomacs"
+                 :namespace clomacs.cm-test)
+
+  (should (equal
+           (clomacs-test-text-with-newlines)
+           (concat "Some text in the first line \n"
+                   "and text in the new line.")))
+
   (clomacs-defun clomacs-test-md-wrapper
                  my-md-to-html-string
                  :lib-name "clomacs"
@@ -65,7 +75,11 @@
 
   (should (equal
            (clomacs-test-md-wrapper "# This is a test")
-           "<h1>This is a test</h1>")))
+           "<h1>This is a test</h1>"))
+
+  (should (equal
+           (clomacs-test-md-wrapper "# This is \"a\" test")
+           "<h1>This is \"a\" test</h1>")))
 
 (if noninteractive
     (ert-run-tests-batch-and-exit t))

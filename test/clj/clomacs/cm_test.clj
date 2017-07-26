@@ -6,3 +6,6 @@
   [x]
   (md-to-html-string x))
 
+(defn text-with-newlines []
+  (str "Some text in the first line \n"
+       "and text in the new line."))

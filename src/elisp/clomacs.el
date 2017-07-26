@@ -116,6 +116,11 @@ If can't find any nREPL process return nil."
       (substring raw-string 1 (1- (length raw-string)))
     raw-string))
 
+(defun clomacs-clean-result-string (return-string)
+  (s-replace-all '(("\\\"" . "\"")
+                   ("\\n"  . "\n")
+                   ("\\t"  . "\t")) return-string))
+
 (defun clomacs-format-result (raw-string return-type)
   "Format Elisp representation of Clojure evaluation result."
   (cl-assert return-type)
@@ -123,7 +128,7 @@ If can't find any nREPL process return nil."
       (let ((return-string (clomacs-strip-string raw-string)))
         (cond
          ((functionp return-type) (funcall return-type raw-string))
-         ((eq return-type :string) return-string)
+         ((eq return-type :string) (clomacs-clean-result-string return-string))
          ((eq return-type :int) (string-to-number return-string))
          ((eq return-type :number) (string-to-number return-string))
          ((eq return-type :list) (read raw-string))
