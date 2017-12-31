@@ -23,7 +23,7 @@
 (setq cider-lein-parameters "repl :headless :host localhost")
 
 (ert-deftest clomacs-defun-test ()
-  "Tests for `clomacs-defun'."
+  "Tests for elisp->clojure `clomacs-defun'."
   (clomacs-defun summ-1 +)
   (should (equal (summ-1 2 3) "5"))
 
@@ -52,6 +52,18 @@
 
   (clomacs-defun make-clojure-vector vector :return-type :list)
   (should (equal '[1 2 3] (make-clojure-vector 1 2 3))))
+
+(ert-deftest clomacs-defn-test ()
+  "Tests for clojure->elisp `clomacs-defn'."
+  (clomacs-defun clomacs-require clojure.core/require)
+  (clomacs-require '[clojure.test :refer [run-tests]])
+  (clomacs-require `'clomacs.core-test)
+  (clomacs-defun run-tests run-tests)
+  (clomacs-httpd-start)
+  (should (equal
+           (run-tests `'clomacs.core-test)
+           "{:test 1, :pass 1, :fail 0, :error 0, :type :summary}"))
+  (clomacs-httpd-stop))
 
 (ert-deftest clomacs-integration-test ()
   "Integration test for `clomacs'."

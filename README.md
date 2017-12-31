@@ -12,10 +12,12 @@
 > ultimate dev environment? "Clomacs" perhaps?
 > * from Emacs isn't for everyone discussion by Anonymous Cow.
 
-Clomacs simplifies call Clojure code from Emacs lisp. The purpose is to provide
-a tool for creating mixed Elisp-Clojure Emacs extensions. It provides a small
-wrapper under [CIDER](https://github.com/clojure-emacs/cider) to reduce
-repetitive code.
+Clomacs simplifies call Clojure code from Emacs lisp and vice versa. The purpose
+is to provide a tool for creating mixed Elisp-Clojure Emacs extensions. It
+provides a small wrapper under [CIDER](https://github.com/clojure-emacs/cider)
+to reduce repetitive code and uses
+[simple-httpd](https://github.com/skeeto/emacs-web-server) to call Elisp from
+Clojure via http requests.
 
 ## Overview
 
@@ -27,9 +29,14 @@ So, the user of the mixed Elisp-Clojure Emacs extension wants to simple run
 Elisp code from the extension.
 
 The purpose of the `clomacs-defun` is to wrap Clojure function in a Elisp
-function, that will start CIDER if necessary or use an existing CIDER connection of certain
-Elisp-Clojure Emacs extension, call this Clojure function and return it's
-result.
+function, that will start CIDER if necessary or use an existing CIDER connection
+of certain Elisp-Clojure Emacs extension, call this Clojure function and return
+it's result.
+
+To run Elisp code from Clojure, http server on Emacs side should be started
+first by `clomacs-httpd-start` function. Then you can straightforwardly pass
+Elisp code as string to Emacs for eval - `clomacs-eval` or wrap Elisp to Clojure
+function via `clomacs-defn`.
 
 ## Installation
 
@@ -49,15 +56,29 @@ Then you can install clomacs with the following command:
 
 ### Simple example
 
+Call Clojure from Elisp:
 ```lisp
 ;; emacs lisp:
 (require 'clomacs)
 (clomacs-defun get-property System/getProperty)
 (message (get-property "java.version"))
 ```
+Call Elisp from Clojure:
+```lisp
+;; emacs lisp:
+(require 'clomacs)
+(clomacs-httpd-start)
+```
+```clojure
+;; clojure:
+(use 'clomacs)
+(clomacs-defn emacs-version emacs-version)
+(println (emacs-version))
+```
 
 Here `System/getProperty` is a Clojure function and `get-property` is a wrapped
-Elisp function.
+Elisp function. `emacs-version` is Elisp function and after macros evaluation -
+is a wrapped Clojure function.
 
 ### Full-fledged example
 
@@ -154,6 +175,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 * [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.3+.
 * [CIDER](https://github.com/clojure-emacs/cider)
 * [s.el](https://github.com/magnars/s.el)
+* [simple-httpd](https://github.com/skeeto/emacs-web-server)
 
 ## License
 
