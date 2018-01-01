@@ -7,5 +7,4 @@
     (clomacs-defn emacs-version emacs-version)
     (is
      (let [ev (emacs-version)]
-       (and (.contains ev "Emacs")
-            (.contains ev "Version"))))))
+       (.contains ev "Emacs")))))

@@ -6,7 +6,7 @@
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
-;; Package-Requires: ((emacs "24.3") (cider "0.16") (s "1.10.0") (simple-httpd "1.4.6"))
+;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -393,6 +393,9 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
 
 (clomacs-defun clomacs-set-emacs-connection
                clomacs/set-emacs-connection)
+
+(clomacs-defun clomacs-get-emacs-connection
+               clomacs/get-emacs-connection)
 
 (clomacs-defun clomacs-close-emacs-connection
                clomacs/close-emacs-connection)

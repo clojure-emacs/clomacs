@@ -36,11 +36,14 @@
 (defn set-emacs-connection [host port]
   (reset! emacs-connection {:host host :port port}))
 
+(defn get-emacs-connection []
+  @emacs-connection)
+
 (defn close-emacs-connection []
   (reset! emacs-connection {}))
 
 (defn clomacs-eval [elisp]
-  "Send `elisp` string to eval it in Emacs. 
+  "Send `elisp` string to eval it in Emacs.
 Return evaluation result as string.
 If connection data is empty - return nil."
   (when (not (empty? @emacs-connection))
@@ -52,7 +55,7 @@ If connection data is empty - return nil."
       {:form-params {:elisp elisp}}))))
 
 (defmacro clomacs-defn [cl-func-name
-                        el-func-name & 
+                        el-func-name &
                         {:keys [doc
                                 result-handler]
                          :or {doc ""
