@@ -271,10 +271,12 @@ Handle errors. Handle difference between CIDER versions."
                      (clomacs-force-symbol-name return-type)))
   (let* ((doc (clomacs-get-doc doc cl-entity-name))
          (cl-entity-name-str (clomacs-force-symbol-name cl-entity-name))
-         (namespace-str (clomacs-force-symbol-name namespace))
          (ns-slash-pos (string-match "/" cl-entity-name-str))
          (implicit-ns (if ns-slash-pos
                           (substring cl-entity-name-str 0 ns-slash-pos)))
+         (namespace-str (if namespace
+                            (clomacs-force-symbol-name namespace)
+                          implicit-ns))
          (cl-entity-full-name (if (and namespace (not implicit-ns))
                                   (concat namespace-str "/" cl-entity-name-str)
                                 cl-entity-name-str)))
@@ -322,7 +324,8 @@ or it may be a custom function (:string by default)."
                             (return-type :string)
                             (return-value :value)
                             lib-name
-                            namespace)
+                            namespace
+                            (httpd-starter nil))
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
 CALL-TYPE - call Clojure side :sync or :async.
 CALLBACK - callback function for :async CALL-TYPE case.
@@ -330,7 +333,11 @@ DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
 RETURN-TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
 or it may be a custom function (:string by default).
-RETURN-VALUE may be :value or :stdout (:value by default)."
+RETURN-VALUE may be :value or :stdout (:value by default).
+HTTPD-STARTER - in the case Clojure side code needs to call Elisp side code,
+http-server should be started to pass http requests from Clojure REPL
+to Emacs. This parameter is Elisp function to do it. Such function can
+looks like `clomacs-httpd-start'."
   (cl-multiple-value-bind
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-func-name
@@ -339,6 +346,9 @@ RETURN-VALUE may be :value or :stdout (:value by default)."
     `(defun ,el-func-name (&rest attributes)
        ,doc
        (clomacs-ensure-nrepl-run ,lib-name)
+       (when (and (functionp ,httpd-starter)
+                  (not (process-status "httpd")))
+         (funcall ,httpd-starter))
        (let* ((attrs ""))
          (dolist (a attributes)
            (setq attrs (concat attrs " "

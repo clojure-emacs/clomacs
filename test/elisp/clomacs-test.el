@@ -93,5 +93,29 @@
            (clomacs-test-md-wrapper "# This is \"a\" test")
            "<h1>This is \"a\" test</h1>")))
 
+(ert-deftest clomacs-prepare-vars-test ()
+  "Tests for `clomacs-prepare-vars'.
+Expected: '(doc namespace-str cl-entity-full-name)"
+  (should
+   (equal
+    '("doc" "cm-test.core" "cm-test.core/my-md-to-html-string")
+    ;; Both :namespace is set and fully qualified function name
+    (clomacs-prepare-vars 'cm-test.core/my-md-to-html-string
+                          :doc "doc"
+                          :namespace 'cm-test.core)))
+  (should
+   (equal
+    '("doc" "cm-test.core" "cm-test.core/my-md-to-html-string")
+    ;; Only fully qualified function name
+    (clomacs-prepare-vars 'cm-test.core/my-md-to-html-string
+                          :doc "doc")))
+  (should
+   (equal
+    '("doc" "cm-test.core" "cm-test.core/my-md-to-html-string")
+    ;; Only :namespace is set.
+    (clomacs-prepare-vars 'my-md-to-html-string
+                          :doc "doc"
+                          :namespace 'cm-test.core))))
+
 (if noninteractive
     (ert-run-tests-batch-and-exit t))
