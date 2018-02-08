@@ -169,6 +169,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 * [cm-test](https://github.com/kostafey/cm-test)
 * [ejc-sql](https://github.com/kostafey/ejc-sql)
+* [flower](https://github.com/PositiveTechnologies/flower)
 
 ## Requirements:
 
