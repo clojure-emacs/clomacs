@@ -120,9 +120,11 @@ If can't find any nREPL process return nil."
     raw-string))
 
 (defun clomacs-clean-result-string (return-string)
-  (s-replace-all '(("\\\"" . "\"")
+  (s-replace-all '(("\\\\" . "\\")
+                   ("\\\"" . "\"")
                    ("\\n"  . "\n")
-                   ("\\t"  . "\t")) return-string))
+                   ("\\t"  . "\t"))
+                 return-string))
 
 (defun clomacs-format-result (raw-string return-type)
   "Format Elisp representation of Clojure evaluation result."

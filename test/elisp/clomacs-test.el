@@ -77,7 +77,8 @@
   (should (equal
            (clomacs-test-text-with-newlines)
            (concat "Some text in the first line \n"
-                   "and text in the new line.")))
+                   "and text in the new line. "
+                   "Text with backslash and \\no new line.")))
 
   (clomacs-defun clomacs-test-md-wrapper
                  my-md-to-html-string
