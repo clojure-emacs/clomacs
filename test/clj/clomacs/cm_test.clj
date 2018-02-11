@@ -8,4 +8,5 @@
 
 (defn text-with-newlines []
   (str "Some text in the first line \n"
-       "and text in the new line."))
+       "and text in the new line. "
+       "Text with backslash and \\no new line."))
