@@ -167,9 +167,11 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 ## Projects uses clomacs:
 
-* [cm-test](https://github.com/kostafey/cm-test)
-* [ejc-sql](https://github.com/kostafey/ejc-sql)
-* [flower](https://github.com/PositiveTechnologies/flower)
+* [cm-test](https://github.com/kostafey/cm-test) - Clomacs usage example.
+* [ejc-sql](https://github.com/kostafey/ejc-sql) - Emacs SQL client uses
+Clojure JDBC.
+* [flower](https://github.com/PositiveTechnologies/flower) - Integration with
+Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## Requirements:
 
@@ -180,7 +182,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 ## License
 
-Copyright © 2013-2017 Kostafey <kostafey@gmail.com> and
+Copyright © 2013-2018 Kostafey <kostafey@gmail.com> and
 [contributors](https://github.com/clojure-emacs/clomacs/graphs/contributors)
 
 Distributed under the General Public License, version 3.
