@@ -40,6 +40,21 @@
 (defvar clomacs-httpd-port 8082
   "Http port to listen for requests from Clojure side.")
 
+(defcustom clomacs-print-length 100000
+  "Value for *print-length* set during `clomacs-defun' macros evaluation.
+Restricts list length passed from Clojure to Emacs lisp.
+Set `nil' for unlimited list length."
+  :group 'clomacs
+  :type 'integer)
+
+(defcustom clomacs-restore-print-length nil
+  "When t restore *print-length* acording to `cider-repl-print-length' value.
+After any `clomacs-defun' wraped funtion call, restore *print-length*.
+Can be useful for debugging purpose to run `clomacs-defun' functions and
+Clojure code directly in the same REPL."
+  :group 'clomacs
+  :type 'boolean)
+
 (defun clomacs-search-connection (repl-buffer-project-name)
   "Search nREPL connection buffer.
 E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
@@ -358,9 +373,15 @@ looks like `clomacs-httpd-start'."
          (let* ((connection (clomacs-get-connection ,lib-name))
                 (request (concat
                           (if ',namespace
-                              (concat "(require '" ',namespace-str ") ") "")
-                          "(" ',cl-entity-full-name attrs ")")))
+                              (format  "(require '%s) " ',namespace-str) "")
+                          (format
+                           "(do (set! *print-length* %s)
+                              (%s %s))"
+                           ,(number-to-string clomacs-print-length)
+                           ',cl-entity-full-name
+                           attrs))))
            (if (equal ,call-type :async)
+               ;; async
                (nrepl-request:eval
                 request
                 (lambda (result)
@@ -369,13 +390,19 @@ looks like `clomacs-httpd-start'."
                                         result
                                         ,return-value ',return-type ',namespace)))
                         (if el-result
-                            (,callback el-result)))))
+                            (,callback el-result))
+                        (if clomacs-restore-print-length
+                            (cider-repl-set-config)))))
                 connection)
-             (clomacs-get-result
-              (nrepl-sync-request:eval
-               request
-               connection)
-              ,return-value ',return-type ',namespace)))))))
+             ;; sync
+             (let ((el-result (clomacs-get-result
+                               (nrepl-sync-request:eval
+                                request
+                                connection)
+                               ,return-value ',return-type ',namespace)))
+               (if clomacs-restore-print-length
+                   (cider-repl-set-config))
+               el-result)))))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
