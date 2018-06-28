@@ -55,6 +55,10 @@ Clojure code directly in the same REPL."
   :group 'clomacs
   :type 'boolean)
 
+(defvar clomacs-repl-buffer-name-prefix
+  "First part of the CIDER nREPL buffer name: \"*cider-repl <lib-name>\"."
+  (concat (car (split-string nrepl-repl-buffer-name-template "%s")) " "))
+
 (defun clomacs-search-connection (repl-buffer-project-name)
   "Search nREPL connection buffer.
 E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
@@ -62,8 +66,16 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
   (let ((result nil))
     (maphash
      (lambda (k v)
-       (if (and (equal (car (split-string (car v) "#"))
-                       repl-buffer-project-name)
+       (if (and (or (equal
+                     (substring (car v) 0 (length repl-buffer-project-name))
+                     repl-buffer-project-name)
+                    (equal
+                     (cadr (substring (split-string
+                                       (car v)
+                                       clomacs-repl-buffer-name-prefix)
+                                      0
+                                      (length repl-buffer-project-name)))
+                     repl-buffer-project-name))
                 (buffer-name (cadr v)))
            (setq result (cadr v))))
      sesman-sessions-hashmap)
