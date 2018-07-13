@@ -70,11 +70,11 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
                      (substring (car v) 0 (length repl-buffer-project-name))
                      repl-buffer-project-name)
                     (equal
-                     (cadr (substring (split-string
+                     (substring (cadr (split-string
                                        (car v)
-                                       clomacs-repl-buffer-name-prefix)
-                                      0
-                                      (length repl-buffer-project-name)))
+                                       clomacs-repl-buffer-name-prefix))
+                                0
+                                (length repl-buffer-project-name))
                      repl-buffer-project-name))
                 (buffer-name (cadr v)))
            (setq result (cadr v))))
