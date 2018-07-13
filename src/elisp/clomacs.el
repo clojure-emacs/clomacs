@@ -56,8 +56,8 @@ Clojure code directly in the same REPL."
   :type 'boolean)
 
 (defvar clomacs-repl-buffer-name-prefix
-  "First part of the CIDER nREPL buffer name: \"*cider-repl <lib-name>\"."
-  (concat (car (split-string nrepl-repl-buffer-name-template "%s")) " "))
+  (concat (car (split-string nrepl-repl-buffer-name-template "%s")) " ")
+  "First part of the CIDER nREPL buffer name: \"*cider-repl <lib-name>\".")
 
 (defun clomacs-search-connection (repl-buffer-project-name)
   "Search nREPL connection buffer.
