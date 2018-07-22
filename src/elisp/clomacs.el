@@ -112,8 +112,8 @@ If can't find any nREPL process return nil."
     ;; simple run lein
     (if lib-buff
         (with-current-buffer lib-buff
-          (cider-jack-in))
-      (cider-jack-in))
+          (cider-jack-in nil))
+      (cider-jack-in nil))
     (message starting-msg)
     (if sync
         (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
