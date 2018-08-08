@@ -66,16 +66,24 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
   (let ((result nil))
     (maphash
      (lambda (k v)
-       (if (and (or (equal
-                     (substring (car v) 0 (length repl-buffer-project-name))
-                     repl-buffer-project-name)
-                    (equal
-                     (substring (cadr (split-string
-                                       (car v)
-                                       clomacs-repl-buffer-name-prefix))
-                                0
-                                (length repl-buffer-project-name))
-                     repl-buffer-project-name))
+       (if (and (or
+                 (and (car v)
+                      (>= (length (car v)) (length repl-buffer-project-name))
+                      (equal
+                       (substring (car v) 0 (length repl-buffer-project-name))
+                       repl-buffer-project-name))
+                 (let ((current-repl-project
+                        (cadr (split-string
+                               (car v)
+                               clomacs-repl-buffer-name-prefix))))
+                   (and current-repl-project
+                        (>= (length current-repl-project)
+                            (length repl-buffer-project-name))
+                        (equal
+                         (substring current-repl-project
+                                    0
+                                    (length repl-buffer-project-name))
+                         repl-buffer-project-name))))
                 (buffer-name (cadr v)))
            (setq result (cadr v))))
      sesman-sessions-hashmap)
@@ -138,11 +146,15 @@ If can't find any nREPL process return nil."
     raw-string))
 
 (defun clomacs-clean-result-string (return-string)
-  (s-replace-all '(("\\\\" . "\\")
-                   ("\\\"" . "\"")
-                   ("\\n"  . "\n")
-                   ("\\t"  . "\t"))
-                 return-string))
+  (if (stringp return-string)
+      (condition-case nil
+          (s-replace-all '(("\\\\" . "\\")
+                           ("\\\"" . "\"")
+                           ("\\n"  . "\n")
+                           ("\\t"  . "\t"))
+                         return-string)
+        (error return-string))
+    return-string))
 
 (defun clomacs-format-result (raw-string return-type)
   "Format Elisp representation of Clojure evaluation result."
