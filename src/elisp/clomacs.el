@@ -338,6 +338,7 @@ or it may be a custom function (:string by default)."
                             (call-type :sync)
                             (callback nil)
                             (doc nil)
+                            (interactive nil)
                             (return-type :string)
                             (return-value :value)
                             lib-name
@@ -348,6 +349,8 @@ CALL-TYPE - call Clojure side :sync or :async.
 CALLBACK - callback function for :async CALL-TYPE case.
 DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
+INTERACTIVE - when defined and is a boolean `t` mark function (interactive),
+if not boolean - insert interactive value into the function beginning as is.
 RETURN-TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
 or it may be a custom function (:string by default).
 RETURN-VALUE may be :value or :stdout (:value by default).
@@ -362,6 +365,10 @@ looks like `clomacs-httpd-start'."
                             :namespace namespace)
     `(defun ,el-func-name (&rest attributes)
        ,doc
+       ,(if interactive
+            (if (booleanp interactive)
+                '(interactive)
+              interactive))
        (clomacs-ensure-nrepl-run ,lib-name)
        (when (and (functionp ,httpd-starter)
                   (not (process-status "httpd")))
