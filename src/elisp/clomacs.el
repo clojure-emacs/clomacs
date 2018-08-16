@@ -55,37 +55,22 @@ Clojure code directly in the same REPL."
   :group 'clomacs
   :type 'boolean)
 
-(defvar clomacs-repl-buffer-name-prefix
-  (concat (car (split-string nrepl-repl-buffer-name-template "%s")) " ")
-  "First part of the CIDER nREPL buffer name: \"*cider-repl <lib-name>\".")
+(defun cloamcs-get-dir (repl-info)
+  (if repl-info
+      (file-name-nondirectory
+       (car (split-string repl-info ":")))))
 
-(defun clomacs-search-connection (repl-buffer-project-name)
+(defun clomacs-search-connection (project-name)
   "Search nREPL connection buffer.
 E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
 REPL-BUFFER-PROJECT-NAME \"clomacs\"."
   (let ((result nil))
     (maphash
      (lambda (k v)
-       (if (and (or
-                 (and (car v)
-                      (>= (length (car v)) (length repl-buffer-project-name))
-                      (equal
-                       (substring (car v) 0 (length repl-buffer-project-name))
-                       repl-buffer-project-name))
-                 (let ((current-repl-project
-                        (cadr (split-string
-                               (car v)
-                               clomacs-repl-buffer-name-prefix))))
-                   (and current-repl-project
-                        (>= (length current-repl-project)
-                            (length repl-buffer-project-name))
-                        (equal
-                         (substring current-repl-project
-                                    0
-                                    (length repl-buffer-project-name))
-                         repl-buffer-project-name))))
-                (buffer-name (cadr v)))
-           (setq result (cadr v))))
+       (let ((current-project-dir (cloamcs-get-dir (cdr k))))
+         (if (and current-project-dir
+                  (s-contains? project-name current-project-dir))
+             (setq result (cadr v)))))
      sesman-sessions-hashmap)
     result))
 
