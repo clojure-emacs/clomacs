@@ -1,12 +1,12 @@
 ;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2017 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2018 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.3
-;; Package-Requires: ((emacs "24.3") (cider "0.16.0") (s "1.12.0") (simple-httpd "1.4.6"))
+;; Package-Requires: ((emacs "24.3") (cider "0.17.0") (s "1.12.0") (simple-httpd "1.4.6"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -27,18 +27,31 @@
 
 ;; `clomacs-defun' - core Clojure to Elisp function wrapper.
 ;;
+;; Elisp to Clojure calls helper functions:
+;; `clomacs-create-httpd-start' - package-specific httpd connection setup.
+;; `clomacs-create-httpd-stop' - package-specific httpd connection stop.
+;;
 ;; See README.md for detailed description.
 
 
 (require 'cl-lib)
+(require 'net-utils)
 (require 'cider)
 (require 's)
 (require 'simple-httpd)
 
 (defvar clomacs-verify-nrepl-on-call t)
 (defvar clomacs-autoload-nrepl-on-call t)
-(defvar clomacs-httpd-port 8082
-  "Http port to listen for requests from Clojure side.")
+
+(defcustom clomacs-httpd-default-port 8080
+  "Http port to listen for requests from Clojure side."
+  :group 'clomacs
+  :type 'integer)
+
+(defcustom clomacs-httpd-port-scan-limit 100
+  "Available Http ports scan range limit."
+  :group 'clomacs
+  :type 'integer)
 
 (defcustom clomacs-print-length 100000
   "Value for *print-length* set during `clomacs-defun' macros evaluation.
@@ -64,15 +77,17 @@ Clojure code directly in the same REPL."
   "Search nREPL connection buffer.
 E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
 REPL-BUFFER-PROJECT-NAME \"clomacs\"."
-  (let ((result nil))
-    (maphash
-     (lambda (k v)
-       (let ((current-project-dir (cloamcs-get-dir (cdr k))))
-         (if (and current-project-dir
-                  (s-contains? project-name current-project-dir))
-             (setq result (cadr v)))))
-     sesman-sessions-hashmap)
-    result))
+  (if project-name
+      (let ((result nil))
+        (maphash
+         (lambda (k v)
+           (let ((current-project-dir (cloamcs-get-dir (cdr k))))
+             (if (and current-project-dir
+                      (s-contains? project-name current-project-dir))
+                 (setq result (cadr v)))))
+         sesman-sessions-hashmap)
+        result)
+    (cider-current-connection)))
 
 (defun clomacs-get-connection (&optional library)
   "Return buffer with nREPL process related to LIBRARY.
@@ -354,10 +369,11 @@ if not boolean - insert interactive value into the function beginning as is.
 RETURN-TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
 or it may be a custom function (:string by default).
 RETURN-VALUE may be :value or :stdout (:value by default).
+LIB-NAME - Elisp library name used in end-user .emacs config by `require'.
 HTTPD-STARTER - in the case Clojure side code needs to call Elisp side code,
 http-server should be started to pass http requests from Clojure REPL
 to Emacs. This parameter is Elisp function to do it. Such function can
-looks like `clomacs-httpd-start'."
+be created by `clomacs-create-httpd-start' macro."
   (cl-multiple-value-bind
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-func-name
@@ -434,6 +450,74 @@ looks like `clomacs-httpd-start'."
            "%s"
            (clomacs-eval-elisp elisp))))
 
+(defun clomacs-get-httpd-port ()
+  "Search available port for httpd process."
+  (let ((netstat-ouptut (shell-command-to-string
+                         (concat netstat-program " -an")))
+        (value)
+        (i 0))
+    (while (not value)
+      (let ((port (+ clomacs-httpd-default-port i)))
+        (setq i (+ i 1))
+        (if (> i clomacs-httpd-port-scan-limit)
+            (error (format "All ports from %d to %d are busy."
+                           clomacs-httpd-default-port
+                           port)))
+        (if (not (s-contains? (number-to-string port) netstat-ouptut))
+            (setq value port))))
+    value))
+
+(cl-defmacro clomacs-create-httpd-start (func-name
+                                         &key
+                                         lib-prefix
+                                         lib-name)
+  "Create lib-specific function FUNC-NAME, aimed to start Emacs httpd process.
+LIB-PREFIX - Custom Elisp library name prefix.
+LIB-NAME - Elisp library name used in end-user .emacs config by `require'.
+The result function FUNC-NAME can be used as `clomacs-defun'
+`:httpd-starter' parameter."
+  (let ((lib-require
+         (make-symbol (concat lib-prefix "-require")))
+        (lib-set-emacs-connection
+         (make-symbol (concat lib-prefix "-set-emacs-connection"))))
+    `(progn
+       (clomacs-defun ,lib-require
+                      clojure.core/require
+                      :lib-name ,lib-name)
+       (clomacs-defun ,lib-set-emacs-connection
+                      clomacs/set-emacs-connection
+                      :lib-name ,lib-name)
+       (defun ,func-name ()
+         "Start Emacs http server and set host and port on Clojure side."
+         (let ((httpd-port (clomacs-get-httpd-port)))
+           (,lib-require `'clomacs)
+           (,lib-set-emacs-connection "localhost" httpd-port)
+           (httpd-start))))))
+
+(cl-defmacro clomacs-create-httpd-stop (func-name
+                                        &key
+                                        lib-prefix
+                                        lib-name)
+  "Create lib-specific function FUNC-NAME, aimed to stop Emacs httpd process.
+LIB-PREFIX - Custom Elisp library name prefix.
+LIB-NAME - Elisp library name used in end-user .emacs config by `require'."
+  (let ((lib-require
+         (make-symbol (concat lib-prefix "-require")))
+        (lib-close-emacs-connection
+         (make-symbol (concat lib-prefix "-close-emacs-connection"))))
+    `(progn
+       (clomacs-defun ,lib-require
+                      clojure.core/require
+                      :lib-name ,lib-name)
+       (clomacs-defun ,lib-close-emacs-connection
+                      clomacs/close-emacs-connection
+                      :lib-name ,lib-name)
+       (defun ,func-name ()
+         "Stop Emacs http server and reset host and port on Clojure side."
+         (,lib-require `'clomacs)
+         (,lib-close-emacs-connection)
+         (httpd-stop)))))
+
 (clomacs-defun clomacs-require
                clojure.core/require)
 
@@ -448,7 +532,7 @@ looks like `clomacs-httpd-start'."
 
 (defun clomacs-httpd-start ()
   "Start Emacs http server and set host and port on Clojure side."
-  (let ((httpd-port clomacs-httpd-port))
+  (let ((httpd-port (clomacs-get-httpd-port)))
     (clomacs-require `'clomacs)
     (clomacs-set-emacs-connection "localhost" httpd-port)
     (httpd-start)))
