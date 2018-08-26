@@ -57,13 +57,14 @@ If connection data is empty - return nil."
 (defmulti param-handler (fn [acc param] (class param)))
 
 (defmethod param-handler java.lang.String [acc param]
+  "Wrap Clojure string with quotes for concatenation."
   (.append acc "\"")
   (.append acc param)
   (.append acc "\""))
 
 (defmethod param-handler java.util.Map [acc param]
   "Convert Clojure map to Elisp alist."
-  (.append acc "(")
+  (.append acc "'(")
   (mapv (fn [[k v]]
           (.append acc "(")
           (param-handler acc k)
@@ -73,7 +74,14 @@ If connection data is empty - return nil."
         param)
   (.append acc ")"))
 
+(defmethod param-handler java.util.List [acc param]
+  "Convert Clojure list or vector to Elisp list."
+  (.append acc "'(")
+  (mapv (fn [v] (param-handler acc v)) param)
+  (.append acc ")"))
+
 (defmethod param-handler :default [acc param]
+  "Use .toString call for param in other cases."
   (.append acc param))
 
 (defmacro clomacs-defn [cl-func-name
@@ -98,5 +106,4 @@ value as parameter, it returns the result of whapped function."
                    (if-not param#
                      (str acc#)
                      (recur (next rest-params#)
-                            (.append acc# " ")
-                            (param-handler acc# param#))))))))))
+                            (param-handler (.append acc# " ") param#))))))))))

@@ -514,8 +514,9 @@ LIB-NAME - Elisp library name used in end-user .emacs config by `require'."
                       :lib-name ,lib-name)
        (defun ,func-name ()
          "Stop Emacs http server and reset host and port on Clojure side."
-         (,lib-require `'clomacs)
-         (,lib-close-emacs-connection)
+         (when (clomacs-get-connection ,lib-name)
+           (,lib-require `'clomacs)
+           (,lib-close-emacs-connection))
          (httpd-stop)))))
 
 (clomacs-defun clomacs-require
