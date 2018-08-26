@@ -6,10 +6,8 @@ cache:
       # Cache stable Emacs binaries
       - "$HOME/emacs/"
 env:
-  - EMACS_VERSION=24.3
-  - EMACS_VERSION=25.1-rc2
   - EMACS_VERSION=25.3
-  - EMACS_VERSION=26.0.91
+  - EMACS_VERSION=26.1
 
 before_install:
   # Configure $PATH: Executables are installed to $HOME/bin
