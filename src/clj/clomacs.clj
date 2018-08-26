@@ -1,6 +1,6 @@
 ;;; clomacs.clj --- Simplifies call Emacs Lisp from Clojure.
 
-;; Copyright (C) 2017 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2017-2018 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -54,13 +54,35 @@ If connection data is empty - return nil."
               (:port @emacs-connection))
       {:form-params {:elisp elisp}}))))
 
+(defmulti param-handler (fn [acc param] (class param)))
+
+(defmethod param-handler java.lang.String [acc param]
+  (.append acc "\"")
+  (.append acc param)
+  (.append acc "\""))
+
+(defmethod param-handler java.util.Map [acc param]
+  "Convert Clojure map to Elisp alist."
+  (.append acc "(")
+  (mapv (fn [[k v]]
+          (.append acc "(")
+          (param-handler acc k)
+          (.append acc " . ")
+          (param-handler acc v)
+          (.append acc ")"))
+        param)
+  (.append acc ")"))
+
+(defmethod param-handler :default [acc param]
+  (.append acc param))
+
 (defmacro clomacs-defn [cl-func-name
                         el-func-name &
                         {:keys [doc
                                 result-handler]
                          :or {doc ""
                               result-handler identity}}]
-    "Wrap `el-func-name`, evaluated on Emacs side by `cl-func-name`.
+  "Wrap `el-func-name`, evaluated on Emacs side by `cl-func-name`.
 `doc` - optional clojure function docstring.
 `result-handler` - function called with result of Elisp returned
 value as parameter, it returns the result of whapped function."
@@ -68,7 +90,13 @@ value as parameter, it returns the result of whapped function."
      ~doc
      (~result-handler
       (clomacs-eval
-       (format "(%s%s%s)"
+       (format "(%s%s)"
                (str '~el-func-name)
-               (if params# " " "")
-               (clojure.string/join " " params#))))))
+               (loop [rest-params# params#
+                      acc# (new StringBuffer "")]
+                 (let [param# (first rest-params#)]
+                   (if-not param#
+                     (str acc#)
+                     (recur (next rest-params#)
+                            (.append acc# " ")
+                            (param-handler acc# param#))))))))))

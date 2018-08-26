@@ -172,16 +172,16 @@ If can't find any nREPL process return nil."
 
 (declare clomacs-format-arg)
 
-(defun clomacs-plist-p (object)
-  "Return t if OBJECT is a plist, otherwise, return nil."
+(defun clomacs-alist-p (object)
+  "Return t if OBJECT is a alist, otherwise, return nil."
   (when (and (listp object)
              (car object)
              (listp (car object))
              (not (listp (cdr (car object)))))
     t))
 
-(defun clomacs-plist-to-map (lst)
-  "Build string representation of Clojure map from Elisp plist LST."
+(defun clomacs-alist-to-map (lst)
+  "Build string representation of Clojure map from Elisp alist LST."
   (let ((tail (car (last lst))))
    (concat
     "{"
@@ -201,7 +201,7 @@ If can't find any nREPL process return nil."
    ((numberp a) (number-to-string a))
    ((stringp a) (clomacs-add-quotes a))
    ((booleanp a) (if a "true" "false"))
-   ((clomacs-plist-p a) (clomacs-plist-to-map a))
+   ((clomacs-alist-p a) (clomacs-alist-to-map a))
    ((and (listp a) (equal (car a) 'quote))
     (concat "'" (clomacs-force-symbol-name
                  (cadr a))))
