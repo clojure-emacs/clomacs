@@ -77,7 +77,7 @@ If connection data is empty - return nil."
 (defmethod param-handler java.util.List [acc param]
   "Convert Clojure list or vector to Elisp list."
   (.append acc "'(")
-  (mapv (fn [v] (param-handler acc v)) param)
+  (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
   (.append acc ")"))
 
 (defmethod param-handler :default [acc param]
