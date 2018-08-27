@@ -83,7 +83,8 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
          (lambda (k v)
            (let ((current-project-dir (cloamcs-get-dir (cdr k))))
              (if (and current-project-dir
-                      (s-contains? project-name current-project-dir))
+                      (or (s-contains? project-name current-project-dir)
+                          (s-contains? project-name (buffer-name (cadr v)))))
                  (setq result (cadr v)))))
          sesman-sessions-hashmap)
         result)
