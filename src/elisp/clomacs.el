@@ -447,9 +447,9 @@ be created by `clomacs-create-httpd-start' macro."
   (eval (car (read-from-string string))))
 
 (defservlet* execute text/plain (elisp)
-  (insert (format
-           "%s"
-           (clomacs-eval-elisp elisp))))
+  (let ((result (clomacs-eval-elisp elisp)))
+    (if result
+        (insert (format "%s" result)))))
 
 (defun clomacs-get-httpd-port ()
   "Search available port for httpd process."

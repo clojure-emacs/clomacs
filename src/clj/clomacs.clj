@@ -47,12 +47,14 @@
 Return evaluation result as string.
 If connection data is empty - return nil."
   (when (not (empty? @emacs-connection))
-    (:body
-     (client/post
-      (format "http://%s:%s/execute"
-              (:host @emacs-connection)
-              (:port @emacs-connection))
-      {:form-params {:elisp elisp}}))))
+    (try
+      (:body
+       (client/post
+        (format "http://%s:%s/execute"
+                (:host @emacs-connection)
+                (:port @emacs-connection))
+        {:form-params {:elisp elisp}}))
+      (catch org.apache.http.NoHttpResponseException e nil))))
 
 (defmulti param-handler (fn [acc param] (class param)))
 
