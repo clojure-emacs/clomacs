@@ -157,6 +157,11 @@ If can't find any nREPL process return nil."
         (error return-string))
     return-string))
 
+(defun clomacs-string-to-boolean (s)
+  (not (or (not s)
+           (equal s "nil")
+           (equal s "false"))))
+
 (defun clomacs-format-result (raw-string return-type)
   "Format Elisp representation of Clojure evaluation result."
   (cl-assert return-type)
@@ -167,6 +172,7 @@ If can't find any nREPL process return nil."
          ((eq return-type :string) (clomacs-clean-result-string return-string))
          ((eq return-type :int) (string-to-number return-string))
          ((eq return-type :number) (string-to-number return-string))
+         ((eq return-type :boolean) (clomacs-string-to-boolean return-string))
          ((eq return-type :list) (read raw-string))
          ((eq return-type :char) (string-to-char return-string))
          ((eq return-type :vector) (string-to-vector return-string))))))

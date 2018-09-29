@@ -22,6 +22,14 @@
 (setq cider-boot-parameters "repl -s -H localhost wait")
 (setq cider-lein-parameters "repl :headless :host localhost")
 
+(ert-deftest clomacs-string-to-boolean-test ()
+  (should (equal (clomacs-string-to-boolean nil) nil))
+  (should (equal (clomacs-string-to-boolean "nil") nil))
+  (should (equal (clomacs-string-to-boolean "false") nil))
+  (should (equal (clomacs-string-to-boolean "") t))
+  (should (equal (clomacs-string-to-boolean "true") t))
+  (should (equal (clomacs-string-to-boolean "any text") t)))
+
 (ert-deftest clomacs-defun-test ()
   "Tests for elisp->clojure `clomacs-defun'."
   (clomacs-defun summ-1 +)
