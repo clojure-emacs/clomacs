@@ -47,7 +47,6 @@ Then you can install clomacs with the following command:
 
 <kbd>M-x package-install [RET] clomacs [RET]</kbd>
 
-
 ## Usage
 
 ### Prerequisites
@@ -100,9 +99,10 @@ lein new cm-test
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :source-paths ["src/clj"]                ; add clj folder to the classpath
-  :dependencies [[org.clojure/clojure "1.5.1"]
-                 [markdown-clj "0.9.28"]]) ; markdown-clj dependency
+  :source-paths ["src/clj"]                    ;; add clj folder to the classpath
+  :dependencies [[org.clojure/clojure "1.9.0"] ;; Use recent version of Clojure
+                 [markdown-clj "0.9.28"]       ;; markdown-clj dependency
+                 [clomacs "0.0.3-SNAPSHOT"]])  ;; Most recent version of clomacs
 ```
 
 **3.** Create `clj` folder in the `src/`.<br/>
