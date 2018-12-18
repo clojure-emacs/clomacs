@@ -106,7 +106,7 @@ If can't find any nREPL process return nil."
   (assert connection)
   (with-current-buffer
     (set-buffer connection)
-    (cider-current-session)))
+    (cider-nrepl-eval-session)))
 
 (defun clomacs-launch-nrepl (library &optional sync)
   (let* ((starting-msg (format
@@ -474,57 +474,39 @@ be created by `clomacs-create-httpd-start' macro."
             (setq value port))))
     value))
 
-(cl-defmacro clomacs-create-httpd-start (func-name
-                                         &key
-                                         lib-prefix
-                                         lib-name)
+(cl-defmacro clomacs-create-httpd-start (func-name &key lib-name)
   "Create lib-specific function FUNC-NAME, aimed to start Emacs httpd process.
-LIB-PREFIX - Custom Elisp library name prefix.
 LIB-NAME - Elisp library name used in end-user .emacs config by `require'.
 The result function FUNC-NAME can be used as `clomacs-defun'
 `:httpd-starter' parameter."
-  (let ((lib-require
-         (make-symbol (concat lib-prefix "-require")))
-        (lib-set-emacs-connection
-         (make-symbol (concat lib-prefix "-set-emacs-connection"))))
-    `(progn
-       (clomacs-defun ,lib-require
-                      clojure.core/require
-                      :lib-name ,lib-name)
-       (clomacs-defun ,lib-set-emacs-connection
-                      clomacs/set-emacs-connection
-                      :lib-name ,lib-name)
-       (defun ,func-name ()
-         "Start Emacs http server and set host and port on Clojure side."
-         (let ((httpd-port (clomacs-get-httpd-port)))
-           (,lib-require `'clomacs)
-           (,lib-set-emacs-connection "localhost" httpd-port)
-           (httpd-start))))))
+  `(defun ,func-name ()
+     "Start Emacs http server and set host and port on Clojure side."
+     (let ((httpd-port (clomacs-get-httpd-port))
+           (lib-require (clomacs-defun (gensym "require")
+                                       clojure.core/require
+                                       :lib-name ,lib-name))
+           (set-connection (clomacs-defun (gensym "set-connection")
+                                          clomacs/set-emacs-connection
+                                          :lib-name ,lib-name)))
+       (apply lib-require `'clomacs)
+       (apply set-connection "localhost" httpd-port)
+       (httpd-start))))
 
-(cl-defmacro clomacs-create-httpd-stop (func-name
-                                        &key
-                                        lib-prefix
-                                        lib-name)
+(cl-defmacro clomacs-create-httpd-stop (func-name &key lib-name)
   "Create lib-specific function FUNC-NAME, aimed to stop Emacs httpd process.
-LIB-PREFIX - Custom Elisp library name prefix.
 LIB-NAME - Elisp library name used in end-user .emacs config by `require'."
-  (let ((lib-require
-         (make-symbol (concat lib-prefix "-require")))
-        (lib-close-emacs-connection
-         (make-symbol (concat lib-prefix "-close-emacs-connection"))))
-    `(progn
-       (clomacs-defun ,lib-require
-                      clojure.core/require
-                      :lib-name ,lib-name)
-       (clomacs-defun ,lib-close-emacs-connection
-                      clomacs/close-emacs-connection
-                      :lib-name ,lib-name)
-       (defun ,func-name ()
-         "Stop Emacs http server and reset host and port on Clojure side."
-         (when (clomacs-get-connection ,lib-name)
-           (,lib-require `'clomacs)
-           (,lib-close-emacs-connection))
-         (httpd-stop)))))
+  `(defun ,func-name ()
+     "Stop Emacs http server and reset host and port on Clojure side."
+     (let ((lib-require (clomacs-defun (gensym "require")
+                                       clojure.core/require
+                                       :lib-name ,lib-name))
+           (close-connection (clomacs-defun (gensym "close-connection")
+                                            clomacs/close-emacs-connection
+                                            :lib-name ,lib-name)))
+       (when (clomacs-get-connection ,lib-name)
+         (apply lib-require `'clomacs)
+         (apply close-connection))
+       (httpd-stop))))
 
 (clomacs-defun clomacs-require
                clojure.core/require)
