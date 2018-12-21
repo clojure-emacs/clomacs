@@ -478,14 +478,17 @@ The result function FUNC-NAME can be used as `clomacs-defun'
   `(defun ,func-name ()
      "Start Emacs http server and set host and port on Clojure side."
      (let ((httpd-port (clomacs-get-httpd-port))
-           (lib-require (clomacs-defun (gensym "require")
+           (lib-require (clomacs-defun ,(make-symbol
+                                         (concat lib-name "-require"))
                                        clojure.core/require
                                        :lib-name ,lib-name))
-           (set-connection (clomacs-defun (gensym "set-connection")
+           (set-connection (clomacs-defun ,(make-symbol
+                                            (concat lib-name
+                                                    "-set-connection"))
                                           clomacs/set-emacs-connection
                                           :lib-name ,lib-name)))
-       (apply lib-require `'clomacs)
-       (apply set-connection "localhost" httpd-port)
+       (funcall lib-require `'clomacs)
+       (funcall set-connection "localhost" httpd-port)
        (httpd-start))))
 
 (cl-defmacro clomacs-create-httpd-stop (func-name &key lib-name)
@@ -493,15 +496,18 @@ The result function FUNC-NAME can be used as `clomacs-defun'
 LIB-NAME - Elisp library name used in end-user .emacs config by `require'."
   `(defun ,func-name ()
      "Stop Emacs http server and reset host and port on Clojure side."
-     (let ((lib-require (clomacs-defun (gensym "require")
+     (let ((lib-require (clomacs-defun ,(make-symbol
+                                         (concat lib-name "-require"))
                                        clojure.core/require
                                        :lib-name ,lib-name))
-           (close-connection (clomacs-defun (gensym "close-connection")
+           (close-connection (clomacs-defun ,(make-symbol
+                                              (concat lib-name
+                                                      "-close-connection"))
                                             clomacs/close-emacs-connection
                                             :lib-name ,lib-name)))
        (when (clomacs-get-connection ,lib-name)
-         (apply lib-require `'clomacs)
-         (apply close-connection))
+         (funcall lib-require `'clomacs)
+         (funcall close-connection))
        (httpd-stop))))
 
 (clomacs-defun clomacs-require
