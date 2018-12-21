@@ -271,19 +271,14 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
          (concat "CIDER is not launched!"))))))
 
 (defun clomacs-get-result (result value type namespace)
-  "Parse result of clojure code evaluation from CIDER.
-Handle errors. Handle difference between CIDER versions."
-  (let ((val-new (cond
-                  ((equal value :value) "value")
-                  ((equal value :stdout) "out"))))
-    (if (or (plist-get result :stderr)
-            (nrepl-dict-get result "err"))
-        (error (or (plist-get result :stderr)
-                   (nrepl-dict-get result "err")))
+  "Parse result of clojure code evaluation from CIDER."
+  (if (nrepl-dict-get result "err")
+      (error (nrepl-dict-get result "err"))
+    (let ((val-new (cond
+                    ((equal value :value) "value")
+                    ((equal value :stdout) "out"))))
       (clomacs-format-result
-       (let ((essence-result (or
-                              (plist-get result value)
-                              (nrepl-dict-get result val-new))))
+       (let ((essence-result (nrepl-dict-get result val-new)))
          (if (and namespace (equal value :value))
              (substring essence-result 3)
            essence-result))
@@ -384,7 +379,8 @@ be created by `clomacs-create-httpd-start' macro."
   (cl-multiple-value-bind
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-func-name
-                            :doc doc
+                            ;; handle case when docstring made by (concat ...)
+                            :doc (if (stringp doc) doc (eval doc))
                             :namespace namespace)
     `(defun ,el-func-name (&rest attributes)
        ,doc
