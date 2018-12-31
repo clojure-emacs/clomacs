@@ -1,6 +1,6 @@
 ;;; clomacs.clj --- Simplifies call Emacs Lisp from Clojure.
 
-;; Copyright (C) 2017-2018 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2017-2019 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -82,6 +82,14 @@ If connection data is empty - return nil."
   (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
   (.append acc ")"))
 
+(defmethod param-handler java.lang.Boolean [acc param]
+  "Convert Clojure boolean to Elisp boolean."
+  (.append acc (if param "t" "nil")))
+
+(defmethod param-handler nil [acc param]
+  "Convert Clojure nil to Elisp nil."
+  (.append acc "nil"))
+
 (defmethod param-handler :default [acc param]
   "Use .toString call for param in other cases."
   (.append acc param))
@@ -105,7 +113,7 @@ value as parameter, it returns the result of whapped function."
                (loop [rest-params# params#
                       acc# (new StringBuffer "")]
                  (let [param# (first rest-params#)]
-                   (if-not param#
+                   (if (empty? rest-params#)
                      (str acc#)
                      (recur (next rest-params#)
                             (param-handler (.append acc# " ") param#))))))))))

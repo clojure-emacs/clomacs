@@ -70,7 +70,7 @@
   (clomacs-httpd-start)
   (should (equal
            (run-tests `'clomacs.core-test)
-           "{:test 2, :pass 8, :fail 0, :error 0, :type :summary}"))
+           "{:test 2, :pass 10, :fail 0, :error 0, :type :summary}"))
   (clomacs-httpd-stop))
 
 (ert-deftest clomacs-integration-test ()
