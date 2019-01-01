@@ -1,6 +1,6 @@
 ;;; clomacs.el --- Simplifies Emacs Lisp interaction with Clojure. -*- lexical-binding: t -*-
 
-;; Copyright (C) 2013-2018 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2013-2019 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -450,8 +450,7 @@ be created by `clomacs-create-httpd-start' macro."
 
 (defservlet* execute text/plain (elisp)
   (let ((result (clomacs-eval-elisp elisp)))
-    (if result
-        (insert (format "%s" result)))))
+    (insert (format "%s" result))))
 
 (defun clomacs-get-httpd-port ()
   "Search available port for httpd process."
