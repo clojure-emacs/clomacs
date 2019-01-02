@@ -448,9 +448,16 @@ be created by `clomacs-create-httpd-start' macro."
   "Evaluate elisp code stored in a STRING."
   (eval (car (read-from-string string))))
 
-(defservlet* execute text/plain (elisp)
-  (let ((result (clomacs-eval-elisp elisp)))
-    (insert (format "%s" result))))
+(defservlet* execute text/plain (fname elisp)
+  (condition-case err
+      (let ((result (clomacs-eval-elisp elisp)))
+        (insert (format "%s" result)))
+    (error
+     (message
+      "%s\n  in wrapped Clojure->Elisp function: %s\n  elisp: %s"
+      (error-message-string err)
+      fname
+      elisp))))
 
 (defun clomacs-get-httpd-port ()
   "Search available port for httpd process."

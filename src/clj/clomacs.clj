@@ -42,7 +42,7 @@
 (defn close-emacs-connection []
   (reset! emacs-connection {}))
 
-(defn clomacs-eval [elisp]
+(defn clomacs-eval [fname elisp]
   "Send `elisp` string to eval it in Emacs.
 Return evaluation result as string.
 If connection data is empty - return nil."
@@ -53,7 +53,8 @@ If connection data is empty - return nil."
         (format "http://%s:%s/execute"
                 (:host @emacs-connection)
                 (:port @emacs-connection))
-        {:form-params {:elisp elisp}}))
+        {:form-params {:elisp elisp
+                       :fname fname}}))
       (catch org.apache.http.NoHttpResponseException e nil))))
 
 (defmulti param-handler (fn [acc param] (class param)))
@@ -108,6 +109,7 @@ value as parameter, it returns the result of whapped function."
      ~doc
      (~result-handler
       (clomacs-eval
+       ~cl-func-name
        (format "(%s%s)"
                (str '~el-func-name)
                (loop [rest-params# params#
