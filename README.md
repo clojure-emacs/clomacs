@@ -40,12 +40,21 @@ function via `clomacs-defn`.
 
 ## Installation
 
+### Elisp side
+
 Add [MELPA](https://github.com/melpa/melpa#usage) (if not yet) to your
 `package-archives` list.
 
 Then you can install clomacs with the following command:
 
 <kbd>M-x package-install [RET] clomacs [RET]</kbd>
+
+### Clojure side
+
+To install Clomacs, add the following dependency to your `project.clj`
+file:
+
+[![Clojars Project](https://clojars.org/clomacs/latest-version.svg)](https://clojars.org/clomacs)
 
 ## Usage
 
