@@ -31,15 +31,23 @@
 (ns clomacs
   (:require [clj-http.client :as client]))
 
-(def emacs-connection (atom {}))
+(def emacs-connection
+  "Keep Emacs httpd server connection information (host and port)."
+  (atom {}))
 
 (defn set-emacs-connection [host port]
+  "Set Emacs httpd server connection information.
+Actual data passed when Elisp `clomacs-httpd-start` is called."
   (reset! emacs-connection {:host host :port port}))
 
 (defn get-emacs-connection []
+  "Get Emacs httpd server connection information.
+Used for check if connection data in Clojure side is ok."
   @emacs-connection)
 
 (defn close-emacs-connection []
+  "Clear Emacs httpd server connection information.
+Called by Elisp `clomacs-httpd-stop`."
   (reset! emacs-connection {}))
 
 (defn clomacs-eval [fname elisp]
