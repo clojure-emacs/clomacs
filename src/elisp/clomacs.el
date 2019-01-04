@@ -451,7 +451,8 @@ be created by `clomacs-create-httpd-start' macro."
 (defservlet* execute text/plain (fname elisp)
   (condition-case err
       (let ((result (clomacs-eval-elisp elisp)))
-        (insert (format "%s" result)))
+        (if result
+            (insert (format "%s" result))))
     (error
      (message
       "%s\n  in wrapped Clojure->Elisp function: %s\n  elisp: %s"

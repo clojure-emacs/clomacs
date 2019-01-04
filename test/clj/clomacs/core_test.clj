@@ -14,7 +14,7 @@
     (clomacs-defn el-identity identity)
     (is (= (el-identity 1) "1"))
     (is (= (el-identity true) "t"))
-    (is (= (el-identity false) "nil"))
+    (is (= (el-identity false) ""))
     (is (= (el-identity 3.14) "3.14"))
     (is (= (el-identity "abc") "abc"))
     (is (= (el-identity {:a 1 :b 2}) "((:a . 1) (:b . 2))"))
