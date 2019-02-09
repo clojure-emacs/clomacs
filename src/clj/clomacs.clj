@@ -50,7 +50,7 @@ Used for check if connection data in Clojure side is ok."
 Called by Elisp `clomacs-httpd-stop`."
   (reset! emacs-connection {}))
 
-(defn clomacs-eval [fname elisp]
+(defn clomacs-eval [fname elisp debug]
   "Send `elisp` string to eval it in Emacs.
 Return evaluation result as string.
 If connection data is empty - return nil."
@@ -62,7 +62,8 @@ If connection data is empty - return nil."
                 (:host @emacs-connection)
                 (:port @emacs-connection))
         {:form-params {:elisp elisp
-                       :fname fname}}))
+                       :fname fname
+                       :debug debug}}))
       (catch org.apache.http.NoHttpResponseException e nil))))
 
 (defmulti param-handler (fn [acc param] (class param)))
@@ -72,6 +73,11 @@ If connection data is empty - return nil."
   (.append acc "\"")
   (.append acc param)
   (.append acc "\""))
+
+(defmethod param-handler clojure.lang.Symbol [acc param]
+  "Convert Clojure symbol to Elisp quoted symbol."
+  (.append acc "'")
+  (.append acc param))
 
 (defmethod param-handler java.util.Map [acc param]
   "Convert Clojure map to Elisp alist."
@@ -106,13 +112,16 @@ If connection data is empty - return nil."
 (defmacro clomacs-defn [cl-func-name
                         el-func-name &
                         {:keys [doc
-                                result-handler]
+                                result-handler
+                                debug]
                          :or {doc ""
-                              result-handler identity}}]
+                              result-handler identity
+                              debug false}}]
   "Wrap `el-func-name`, evaluated on Emacs side by `cl-func-name`.
 `doc` - optional clojure function docstring.
 `result-handler` - function called with result of Elisp returned
-value as parameter, it returns the result of whapped function."
+value as parameter, it returns the result of whapped function.
+`debug` - show string passed to evaluation on Elisp side in *Messages* buffer."
   `(defn ~cl-func-name [& params#]
      ~doc
      (~result-handler
@@ -126,4 +135,5 @@ value as parameter, it returns the result of whapped function."
                    (if (empty? rest-params#)
                      (str acc#)
                      (recur (next rest-params#)
-                            (param-handler (.append acc# " ") param#))))))))))
+                            (param-handler (.append acc# " ") param#))))))
+       ~debug))))

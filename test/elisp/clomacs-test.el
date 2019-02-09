@@ -66,11 +66,14 @@
   (clomacs-defun clomacs-require clojure.core/require)
   (clomacs-require '[clojure.test :refer [run-tests]])
   (clomacs-require `'clomacs.core-test)
-  (clomacs-defun run-tests run-tests)
+  (clomacs-defun run-tests run-tests :return-value :both)
   (clomacs-httpd-start)
-  (should (equal
-           (run-tests `'clomacs.core-test)
-           "{:test 2, :pass 10, :fail 0, :error 0, :type :summary}"))
+  (let* ((lein-test-result (run-tests `'clomacs.core-test))
+         (test-out (car lein-test-result))
+         (test-value (cdr lein-test-result)))
+    (message test-out)
+    (should (equal test-value
+                   "{:test 2, :pass 11, :fail 0, :error 0, :type :summary}")))
   (clomacs-httpd-stop))
 
 (ert-deftest clomacs-integration-test ()

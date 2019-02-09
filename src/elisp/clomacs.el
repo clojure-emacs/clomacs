@@ -274,15 +274,20 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
   "Parse result of clojure code evaluation from CIDER."
   (if (nrepl-dict-get result "err")
       (error (nrepl-dict-get result "err"))
-    (let ((val-new (cond
-                    ((equal value :value) "value")
-                    ((equal value :stdout) "out"))))
-      (clomacs-format-result
-       (let ((essence-result (nrepl-dict-get result val-new)))
-         (if (and namespace (equal value :value))
-             (substring essence-result 3)
-           essence-result))
-       type))))
+    (labels ((get-value () (clomacs-format-result
+                            (let ((essence-result
+                                   (nrepl-dict-get result "value")))
+                              (if (and namespace (equal value :value))
+                                  (substring essence-result 3)
+                                essence-result))
+                            type))
+             (get-out () (clomacs-format-result
+                          (nrepl-dict-get result "out")
+                          type)))
+      (cond
+       ((equal value :value) (get-value))
+       ((equal value :stdout) (get-out))
+       ((equal value :both) (cons (get-out) (get-value)))))))
 
 (defun clomacs-add-quotes (str)
   (format "%S"
@@ -448,7 +453,9 @@ be created by `clomacs-create-httpd-start' macro."
   "Evaluate elisp code stored in a STRING."
   (eval (car (read-from-string string))))
 
-(defservlet* execute text/plain (fname elisp)
+(defservlet* execute text/plain (fname elisp debug)
+  (if (equal debug "true")
+      (message "Clojure->Elisp function: %s\n  elisp: %s" fname elisp))
   (condition-case err
       (let ((result (clomacs-eval-elisp elisp)))
         (if result
