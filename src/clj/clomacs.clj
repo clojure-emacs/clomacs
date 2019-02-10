@@ -137,3 +137,9 @@ value as parameter, it returns the result of whapped function.
                      (recur (next rest-params#)
                             (param-handler (.append acc# " ") param#))))))
        ~debug))))
+
+(defn format-result [result]
+  "Can be used to apply the same format to obtain result of Elisp->Clojure
+calls as used in parameters of Clojure->Elisp calls."
+  (str (param-handler (new StringBuffer "") result)))
+

@@ -175,7 +175,8 @@ If can't find any nREPL process return nil."
          ((eq return-type :boolean) (clomacs-string-to-boolean return-string))
          ((eq return-type :list) (read raw-string))
          ((eq return-type :char) (string-to-char return-string))
-         ((eq return-type :vector) (string-to-vector return-string))))))
+         ((eq return-type :vector) (read return-string))
+         ((eq return-type :eval) (eval (read (read raw-string))))))))
 
 (declare clomacs-format-arg)
 
@@ -222,7 +223,8 @@ If can't find any nREPL process return nil."
         :number
         :list
         :char
-        :vector))
+        :vector
+        :eval))
 
 (defun clomacs-highlight-initialize ()
   (font-lock-add-keywords
@@ -274,16 +276,16 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
   "Parse result of clojure code evaluation from CIDER."
   (if (nrepl-dict-get result "err")
       (error (nrepl-dict-get result "err"))
-    (labels ((get-value () (clomacs-format-result
-                            (let ((essence-result
-                                   (nrepl-dict-get result "value")))
-                              (if (and namespace (equal value :value))
-                                  (substring essence-result 3)
-                                essence-result))
-                            type))
-             (get-out () (clomacs-format-result
-                          (nrepl-dict-get result "out")
-                          type)))
+    (cl-labels ((get-value () (clomacs-format-result
+                               (let ((essence-result
+                                      (nrepl-dict-get result "value")))
+                                 (if (and namespace (equal value :value))
+                                     (substring essence-result 3)
+                                   essence-result))
+                               type))
+                (get-out () (clomacs-format-result
+                             (nrepl-dict-get result "out")
+                             type)))
       (cond
        ((equal value :value) (get-value))
        ((equal value :stdout) (get-out))
