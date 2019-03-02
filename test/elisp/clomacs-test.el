@@ -22,6 +22,9 @@
 (setq cider-boot-parameters "repl -s -H localhost wait")
 (setq cider-lein-parameters "repl :headless :host localhost")
 
+(defun clomacs-get-emacs-major-version ()
+  emacs-major-version)
+
 (ert-deftest clomacs-string-to-boolean-test ()
   (should (equal (clomacs-string-to-boolean nil) nil))
   (should (equal (clomacs-string-to-boolean "nil") nil))
@@ -41,7 +44,7 @@
                              (should (numberp result))
                              (should (equal result (+ 3 5 9))))
                  :return-type :number)
-  (summ-async 3 5 9)
+  ;; (summ-async 3 5 9)
 
   (clomacs-defun summ-2 + :return-type :number)
   (should (equal (summ-2 2 3) 5))
@@ -78,7 +81,6 @@
 
 (ert-deftest clomacs-integration-test ()
   "Integration test for `clomacs'."
-  (require 'clomacs)
 
   (clomacs-defun clomacs-test-text-with-newlines
                  text-with-newlines
@@ -129,5 +131,10 @@ Expected: '(doc namespace-str cl-entity-full-name)"
                           :doc "doc"
                           :namespace 'cm-test.core))))
 
-(if noninteractive
-    (ert-run-tests-batch-and-exit t))
+(clomacs-with-nrepl
+ "clomacs"
+ (lambda ()
+   (if noninteractive
+       (ert-run-tests-batch-and-exit t))))
+
+(sit-for 60)

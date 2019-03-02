@@ -12,6 +12,7 @@
 (deftest type-params-handler-test
   (testing "param-handler multimethods test."
     (clomacs-defn el-identity identity)
+    (clomacs-defn emacs-major-version clomacs-get-emacs-major-version)
     (is (= (el-identity 1) "1"))
     (is (= (el-identity true) "t"))
     (is (= (el-identity false) ""))
@@ -21,4 +22,7 @@
     (is (= (el-identity {:a 1 :b 2}) "((:a . 1) (:b . 2))"))
     (is (= (el-identity '(1 2 3)) "(1 2 3)"))
     (is (= (el-identity [1 2 3]) "(1 2 3)"))
-    (is (= (el-identity [:a "b" 'c]) "(:a b (quote c))"))))
+    (is (= (el-identity [:a "b" 'c])
+           (if (>= (read-string (emacs-major-version)) 27)
+             "(:a b 'c)"
+             "(:a b (quote c))")))))
