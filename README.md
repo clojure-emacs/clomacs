@@ -1,7 +1,7 @@
 [![License GPL 3](https://img.shields.io/badge/license-GPL_3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
 [![MELPA](https://melpa.org/packages/clomacs-badge.svg)](https://melpa.org/#/clomacs)
 [![Melpa Stable](https://stable.melpa.org/packages/clomacs-badge.svg)](https://stable.melpa.org/#/clomacs)
-[![Build Status](https://api.travis-ci.org/clojure-emacs/clomacs.svg?branch=master)](https://travis-ci.org/clojure-emacs/clomacs#)
+[![CircleCI](https://circleci.com/gh/clojure-emacs/clomacs.svg?style=svg)](https://circleci.com/gh/clojure-emacs/clomacs)
 [![Coverage Status](https://coveralls.io/repos/github/clojure-emacs/clomacs/badge.svg?branch=master)](https://coveralls.io/github/clojure-emacs/clomacs?branch=master)
 
 # clomacs
