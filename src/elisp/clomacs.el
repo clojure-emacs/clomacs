@@ -37,6 +37,7 @@
 (require 'cl-lib)
 (require 'net-utils)
 (require 'cider)
+(provide 'clojure-mode)
 (require 's)
 (require 'simple-httpd)
 
@@ -110,7 +111,7 @@ If can't find any nREPL process return nil."
     (set-buffer connection)
     (cider-nrepl-eval-session)))
 
-(defun clomacs-jack-in (params wrapped-eval attributes nrepl-ready-callback)
+(defun clomacs-jack-in-clj (params wrapped-eval attributes nrepl-ready-callback)
   "Start an nREPL server for the current project and connect to it.
 PARAMS is a plist optionally containing :project-dir and :jack-in-cmd."
   (let ((params (thread-first params
@@ -131,25 +132,57 @@ PARAMS is a plist optionally containing :project-dir and :jack-in-cmd."
                nil))
            (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))))))
 
+(defun clomacs-jack-in-cljs (params wrapped-eval attributes nrepl-ready-callback)
+  "Start an nREPL server for the current project and connect to it.
+PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
+:cljs-repl-type (e.g. Node, Figwheel, etc)."
+  (let ((cider-jack-in-dependencies (append cider-jack-in-dependencies cider-jack-in-cljs-dependencies))
+        (cider-jack-in-lein-plugins (append cider-jack-in-lein-plugins cider-jack-in-cljs-lein-plugins))
+        (cider-jack-in-nrepl-middlewares (append cider-jack-in-nrepl-middlewares cider-jack-in-cljs-nrepl-middlewares))
+        (orig-buffer (current-buffer)))
+    ;; cider--update-jack-in-cmd relies indirectly on the above dynamic vars
+    (let ((params (thread-first params
+                    (cider--update-project-dir)
+                    (cider--check-existing-session)
+                    (cider--update-jack-in-cmd))))
+      (nrepl-start-server-process
+       (plist-get params :project-dir)
+       (plist-get params :jack-in-cmd)
+       (lambda (server-buffer)
+         (prog1 (with-current-buffer orig-buffer
+                  (cider-connect-sibling-cljs params server-buffer))
+           (let ((eval-result (if wrapped-eval
+                                  (apply wrapped-eval attributes))))
+             (when nrepl-ready-callback
+               (funcall nrepl-ready-callback eval-result)
+               nil))
+           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))))))
+
 (defun clomacs-launch-nrepl (lib-name
                              wrapped-eval
                              attributes
-                             nrepl-ready-callback)
+                             nrepl-ready-callback
+                             backend)
   (let* ((starting-msg (format
                         "Starting nREPL server for %s..."
                         (propertize (or lib-name "current-buffer")
                                     'face 'font-lock-keyword-face)))
          (project-dir (if-let* ((lib-file (if lib-name
-                                              (find-library-name lib-name)))
-                                (project-clj (locate-dominating-file
-                                              (file-name-directory lib-file)
-                                              "project.clj")))
-                          (file-name-directory project-clj))))
+                                              (find-library-name lib-name))))
+                          (clojure-project-dir
+                           (file-name-directory lib-file))))
+         (params (if project-dir (list :project-dir project-dir))))
     ;; simple run lein
-    (clomacs-jack-in (if project-dir (list :project-dir project-dir))
-                     wrapped-eval
-                     attributes
-                     nrepl-ready-callback)
+    (pcase backend
+      (:clj (clomacs-jack-in-clj params
+                                 wrapped-eval
+                                 attributes
+                                 nrepl-ready-callback))
+      (:cljs (clomacs-jack-in-cljs params
+                                   wrapped-eval
+                                   attributes
+                                   nrepl-ready-callback))
+      (_ (error "Unknown backend %s" backend)))
     (message starting-msg))
   nil)
 
@@ -285,7 +318,8 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
 (defun clomacs-ensure-nrepl-run (lib-name
                                  wrapped-eval
                                  attributes
-                                 nrepl-ready-callback)
+                                 nrepl-ready-callback
+                                 backend)
   "Ensure nREPL is running."
   (if (clomacs-get-connection lib-name)
       (if wrapped-eval
@@ -295,13 +329,15 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
         (clomacs-launch-nrepl lib-name
                               wrapped-eval
                               attributes
-                              nrepl-ready-callback)
+                              nrepl-ready-callback
+                              backend)
       (error
        (concat "CIDER is not launched!")))))
 
 (cl-defun clomacs-with-nrepl (lib-name
                               wrapped-eval
-                              &key params)
+                              &key params
+                              (backend :clj))
   "Used to call lambda with multiple Elisp to Clojure wrapped functions.
 LIB-NAME - Elisp library name used in end-user .emacs config by `require'.
 WRAPPED-EVAL is a lambda that can contain any `clomacs-defun' created
@@ -309,7 +345,7 @@ functions. Since nREPL can be not launched yet, this lambda is evaled as
 a callback after nREPL started.
 PARAMS is a list of the values for parameters of preceding lambda."
   (declare (indent 1))
-  (clomacs-ensure-nrepl-run lib-name wrapped-eval params nil))
+  (clomacs-ensure-nrepl-run lib-name wrapped-eval params nil backend))
 
 (defun clomacs-get-result (result value type namespace)
   "Parse result of clojure code evaluation from CIDER."
@@ -370,7 +406,8 @@ PARAMS is a list of the values for parameters of preceding lambda."
                           (type :string)
                           lib-name
                           namespace
-                          nrepl-ready-callback)
+                          nrepl-ready-callback
+                          (backend :clj))
   "Wrap CL-ENTITY-NAME, evaluated on clojure side by EL-ENTITY-NAME.
 DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
@@ -395,7 +432,8 @@ or it may be a custom function (:string by default)."
                      connection)))
               (clomacs-get-result result :value ',type ',namespace)))
           nil
-          ,nrepl-ready-callback)
+          ,nrepl-ready-callback
+          ,backend)
        ,doc)))
 
 ;;;###autoload
@@ -411,7 +449,8 @@ or it may be a custom function (:string by default)."
                             lib-name
                             namespace
                             (httpd-starter nil)
-                            nrepl-ready-callback)
+                            nrepl-ready-callback
+                            (backend :clj))
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
 CALL-TYPE - call Clojure side :sync or :async.
 CALLBACK - callback function for :async CALL-TYPE case.
@@ -488,7 +527,8 @@ evaluation can be added and executed."
                       (cider-repl-set-config))
                   el-result)))))
         attributes
-        ,nrepl-ready-callback))))
+        ,nrepl-ready-callback
+        ,backend))))
 
 (defun clomacs-load-file (file-path)
   "Sync and straightforward load clojure file."
