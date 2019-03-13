@@ -37,7 +37,7 @@
 (require 'cl-lib)
 (require 'net-utils)
 (require 'cider)
-(provide 'clojure-mode)
+(require 'clojure-mode)
 (require 's)
 (require 'simple-httpd)
 
