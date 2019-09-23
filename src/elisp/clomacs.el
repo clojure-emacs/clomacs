@@ -5,8 +5,8 @@
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
-;; Version: 0.0.3
-;; Package-Requires: ((emacs "24.3") (cider "0.21.0") (s "1.12.0") (simple-httpd "1.4.6"))
+;; Version: 0.0.4
+;; Package-Requires: ((emacs "24.3") (cider "0.22.1") (s "1.12.0") (simple-httpd "1.4.6"))
 
 ;; This file is not part of GNU Emacs.
 

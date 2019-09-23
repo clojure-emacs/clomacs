@@ -1,4 +1,4 @@
-(defproject clomacs "0.0.3-SNAPSHOT"
+(defproject clomacs "0.0.4-SNAPSHOT"
   :description "Simplifies emacs lisp interaction with clojure."
   :url "https://github.com/clojure-emacs/clomacs"
   :license {:name "General Public License 3"
@@ -6,7 +6,6 @@
   :test-paths ["test/clj"]
   :source-paths ["src/clj"]
   :dependencies [[org.clojure/clojure "1.10.0"]
-                 ;; Used for clomacs self-testing.
-                 [markdown-clj "0.9.47"]
                  [clj-http "3.7.0"]
-                 [clomacs "0.0.3-SNAPSHOT"]])
+                 ;; Used for clomacs self-testing.
+                 [markdown-clj "0.9.47"]])
