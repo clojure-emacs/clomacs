@@ -63,14 +63,6 @@ Set `nil' for unlimited list length."
   :group 'clomacs
   :type 'integer)
 
-(defcustom clomacs-restore-print-length nil
-  "When t restore *print-length* acording to `cider-repl-print-length' value.
-After any `clomacs-defun' wraped funtion call, restore *print-length*.
-Can be useful for debugging purpose to run `clomacs-defun' functions and
-Clojure code directly in the same REPL."
-  :group 'clomacs
-  :type 'boolean)
-
 (defun cloamcs-get-dir (repl-info)
   (if repl-info
       (file-name-nondirectory
@@ -117,20 +109,20 @@ PARAMS is a plist optionally containing :project-dir and :jack-in-cmd."
   (let ((params (thread-first params
                   (cider--update-project-dir)
                   (cider--check-existing-session)
-                  (cider--update-jack-in-cmd))))
-    (let ((old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
-      (setq cider-repl-pop-to-buffer-on-connect nil)
-      (nrepl-start-server-process
-       (plist-get params :project-dir)
-       (plist-get params :jack-in-cmd)
-       (lambda (server-buffer)
-         (prog1 (cider-connect-sibling-clj params server-buffer)
-           (let ((eval-result (if wrapped-eval
-                                  (apply wrapped-eval attributes))))
-             (when nrepl-ready-callback
-               (funcall nrepl-ready-callback eval-result)
-               nil))
-           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))))))
+                  (cider--update-jack-in-cmd)))
+        (old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
+    (setq cider-repl-pop-to-buffer-on-connect nil)
+    (nrepl-start-server-process
+     (plist-get params :project-dir)
+     (plist-get params :jack-in-cmd)
+     (lambda (server-buff)
+       (prog1 (cider-connect-sibling-clj params server-buff)
+         (let ((eval-result (if wrapped-eval
+                                (apply wrapped-eval attributes))))
+           (when nrepl-ready-callback
+             (funcall nrepl-ready-callback eval-result)
+             nil))
+         (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop))))))
 
 (defun clomacs-jack-in-cljs (params wrapped-eval attributes nrepl-ready-callback)
   "Start an nREPL server for the current project and connect to it.
@@ -139,24 +131,26 @@ PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
   (let ((cider-jack-in-dependencies (append cider-jack-in-dependencies cider-jack-in-cljs-dependencies))
         (cider-jack-in-lein-plugins (append cider-jack-in-lein-plugins cider-jack-in-cljs-lein-plugins))
         (cider-jack-in-nrepl-middlewares (append cider-jack-in-nrepl-middlewares cider-jack-in-cljs-nrepl-middlewares))
-        (orig-buffer (current-buffer)))
-    ;; cider--update-jack-in-cmd relies indirectly on the above dynamic vars
-    (let ((params (thread-first params
-                    (cider--update-project-dir)
-                    (cider--check-existing-session)
-                    (cider--update-jack-in-cmd))))
-      (nrepl-start-server-process
-       (plist-get params :project-dir)
-       (plist-get params :jack-in-cmd)
-       (lambda (server-buffer)
-         (prog1 (with-current-buffer orig-buffer
-                  (cider-connect-sibling-cljs params server-buffer))
-           (let ((eval-result (if wrapped-eval
-                                  (apply wrapped-eval attributes))))
-             (when nrepl-ready-callback
-               (funcall nrepl-ready-callback eval-result)
-               nil))
-           (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop)))))))
+        (orig-buffer (current-buffer))
+        ;; cider--update-jack-in-cmd relies indirectly on the above dynamic vars
+        (params (thread-first params
+                  (cider--update-project-dir)
+                  (cider--check-existing-session)
+                  (cider--update-jack-in-cmd)))
+        (old-cider-repl-pop cider-repl-pop-to-buffer-on-connect))
+    (setq cider-repl-pop-to-buffer-on-connect nil)
+    (nrepl-start-server-process
+     (plist-get params :project-dir)
+     (plist-get params :jack-in-cmd)
+     (lambda (server-buff)
+       (prog1 (with-current-buffer orig-buffer
+                (cider-connect-sibling-cljs params server-buff))
+         (let ((eval-result (if wrapped-eval
+                                (apply wrapped-eval attributes))))
+           (when nrepl-ready-callback
+             (funcall nrepl-ready-callback eval-result)
+             nil))
+         (setq cider-repl-pop-to-buffer-on-connect old-cider-repl-pop))))))
 
 (defun clomacs-launch-nrepl (lib-name
                              wrapped-eval
@@ -292,16 +286,7 @@ PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
 
 (eval-after-load "clomacs"
   (lambda ()
-    (clomacs-highlight-initialize)
-
-    ;; Should be last `clomacs-defun'
-    (clomacs-defun clomacs--doc
-                   clojure.repl/doc
-                   :return-value :stdout)
-
-    (defun clomacs-doc (x)
-      (if (clomacs-get-connection)
-          (clomacs--doc x)))))
+    (clomacs-highlight-initialize)))
 
 (defun clomacs-get-doc (doc cl-entity-name)
   "Form the emacs-lisp side entity docstring.
@@ -309,11 +294,15 @@ DOC - user-defined docsting.
 CL-ENTITY-NAME - clojure side entity name.
 CL-ENTITY-TYPE - \"value\" or \"function\""
   (if doc doc
-    (concat "Wrapped clojure entity:"
-            (let ((cl-entity-doc (when (fboundp 'clomacs-doc)
-                                   (clomacs-doc cl-entity-name))))
-              (if cl-entity-doc (concat "\n" cl-entity-doc)
-                (clomacs-force-symbol-name cl-entity-name))))))
+    (format "Wrapped clojure entity: %s%s"
+            cl-entity-name
+            (let ((cl-entity-doc (if (clomacs-get-connection)
+                                     (nrepl-dict-get
+                                      (cider-var-info
+                                       (symbol-name cl-entity-name)) "doc"))))
+              (if cl-entity-doc
+                  (concat "\n" cl-entity-doc)
+                "")))))
 
 (defun clomacs-ensure-nrepl-run (lib-name
                                  wrapped-eval
@@ -513,9 +502,7 @@ evaluation can be added and executed."
                                            ',return-type
                                            ',namespace)))
                            (if el-result
-                               (,callback el-result))
-                           (if clomacs-restore-print-length
-                               (cider-repl-set-config)))))
+                               (,callback el-result)))))
                    connection)
                 ;; sync
                 (let ((el-result (clomacs-get-result
@@ -523,8 +510,6 @@ evaluation can be added and executed."
                                    request
                                    connection)
                                   ,return-value ',return-type ',namespace)))
-                  (if clomacs-restore-print-length
-                      (cider-repl-set-config))
                   el-result)))))
         attributes
         ,nrepl-ready-callback

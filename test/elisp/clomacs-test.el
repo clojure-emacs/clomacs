@@ -70,14 +70,24 @@
   (clomacs-require '[clojure.test :refer [run-tests]])
   (clomacs-require `'clomacs.core-test)
   (clomacs-defun run-tests run-tests :return-value :both)
+  (clomacs-defun format-string clomacs/format-string)
   (clomacs-httpd-start)
   (let* ((lein-test-result (run-tests `'clomacs.core-test))
          (test-out (car lein-test-result))
-         (test-value (cdr lein-test-result)))
+         (test-value (eval (car (read-from-string
+                                 (format-string (cdr lein-test-result)))))))
     (message test-out)
-    (should (equal test-value
-                   "{:test 2, :pass 11, :fail 0, :error 0, :type :summary}")))
+    (message "%s" test-value)
+    (should (> (alist-get :test test-value) 0))
+    (should (> (alist-get :pass test-value) 0))
+    (should (= (alist-get :fail test-value) 0))
+    (should (= (alist-get :error test-value) 0)))
   (clomacs-httpd-stop))
+
+(ert-deftest clomacs-get-doc-test ()
+  (should (equal "Wrapped clojure entity: clomacs/format-string
+Format string created by Clojure side to Elisp structure as string."
+                 (clomacs-get-doc nil 'clomacs/format-string))))
 
 (ert-deftest clomacs-integration-test ()
   "Integration test for `clomacs'."
