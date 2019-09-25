@@ -297,9 +297,11 @@ CL-ENTITY-TYPE - \"value\" or \"function\""
     (format "Wrapped clojure entity: %s%s"
             cl-entity-name
             (let ((cl-entity-doc (if (clomacs-get-connection)
-                                     (nrepl-dict-get
-                                      (cider-var-info
-                                       (symbol-name cl-entity-name)) "doc"))))
+                                     (condition-case _
+                                         (nrepl-dict-get
+                                          (cider-var-info
+                                           (symbol-name cl-entity-name)) "doc")
+                                       (error nil)))))
               (if cl-entity-doc
                   (concat "\n" cl-entity-doc)
                 "")))))
