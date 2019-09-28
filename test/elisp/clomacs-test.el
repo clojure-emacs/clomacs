@@ -94,7 +94,6 @@ Format string created by Clojure side to Elisp structure as string."
 
   (clomacs-defun clomacs-test-text-with-newlines
                  text-with-newlines
-                 :lib-name "clomacs"
                  :namespace clomacs.cm-test)
 
   (should (equal
@@ -105,7 +104,6 @@ Format string created by Clojure side to Elisp structure as string."
 
   (clomacs-defun clomacs-test-md-wrapper
                  my-md-to-html-string
-                 :lib-name "clomacs"
                  :namespace clomacs.cm-test
                  :doc "Convert markdown to html via clojure lib.")
 
