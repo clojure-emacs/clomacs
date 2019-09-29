@@ -185,7 +185,7 @@ Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## Requirements:
 
-* [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 24.3+.
+* [GNU Emacs](http://www.gnu.org/software/emacs/emacs.html) 26.3+.
 * [CIDER](https://github.com/clojure-emacs/cider)
 * [s.el](https://github.com/magnars/s.el)
 * [simple-httpd](https://github.com/skeeto/emacs-web-server)

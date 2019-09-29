@@ -10,15 +10,9 @@ default: &default-steps
     - run: make test
 
 jobs:
-  test-emacs-25:
-    docker:
-      - image: silex/emacs:25-dev
-        entrypoint: bash
-    <<: *default-steps
-
   test-emacs-26:
     docker:
-      - image: silex/emacs:26-dev
+      - image: silex/emacs:26.3-dev
         entrypoint: bash
     <<: *default-steps
 
@@ -32,6 +26,5 @@ workflows:
   version: 2
   ci-test-matrix:
     jobs:
-      - test-emacs-25
       - test-emacs-26
       - test-emacs-master
