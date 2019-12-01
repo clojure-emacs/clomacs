@@ -91,7 +91,8 @@ If LIBRARY is nil, attempts to use \"clomacs\", \"localhost\" or
 any current connection.
 If can't find any nREPL process return nil."
   (if library
-      (clomacs-search-connection library)
+      (or (clomacs-search-connection library)
+          (if noninteractive (cider-current-repl)))
     (or (clomacs-search-connection "clomacs")
         (clomacs-search-connection "localhost")
         (cider-current-repl))))
