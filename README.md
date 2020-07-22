@@ -192,7 +192,7 @@ Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## License
 
-Copyright © 2013-2019 Kostafey <kostafey@gmail.com> and
+Copyright © 2013-2020 Kostafey <kostafey@gmail.com> and
 [contributors](https://github.com/clojure-emacs/clomacs/graphs/contributors)
 
 Distributed under the General Public License, version 3.

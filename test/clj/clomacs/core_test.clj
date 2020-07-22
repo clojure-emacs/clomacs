@@ -21,8 +21,17 @@
     (is (= (el-identity 'abc) "abc"))
     (is (= (el-identity {:a 1 :b 2}) "((:a . 1) (:b . 2))"))
     (is (= (el-identity '(1 2 3)) "(1 2 3)"))
-    (is (= (el-identity [1 2 3]) "(1 2 3)"))
+    (is (= (el-identity (java.util.LinkedList. [1 2 3])) "(1 2 3)"))
+    (is (some #{(el-identity #{1 2 3})}
+              '("(1 2 3)" "(1 3 2)" "(2 1 3)" "(2 3 1)" "(3 1 2)" "(3 2 1)")))
+    (is (= (el-identity [1 2 3]) "[1 2 3]"))
+    (is (= (el-identity (java.util.ArrayList. [1 2 3])) "[1 2 3]"))
+    (is (= (el-identity (let [ar (make-array Integer/TYPE 3)]
+                          (aset ar 0 1)
+                          (aset ar 1 2)
+                          (aset ar 2 3)
+                          ar)) "[1 2 3]"))
     (is (= (el-identity [:a "b" 'c])
            (if (>= (read-string (emacs-major-version)) 27)
-             "(:a b 'c)"
-             "(:a b (quote c))")))))
+             "[:a b 'c]"
+             "[:a b (quote c)]")))))

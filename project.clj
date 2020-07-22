@@ -1,4 +1,4 @@
-(defproject clomacs "0.0.4-SNAPSHOT"
+(defproject clomacs "0.0.5-SNAPSHOT"
   :description "Simplifies emacs lisp interaction with clojure."
   :url "https://github.com/clojure-emacs/clomacs"
   :license {:name "General Public License 3"

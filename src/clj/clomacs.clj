@@ -1,6 +1,6 @@
 ;;; clomacs.clj --- Simplifies call Emacs Lisp from Clojure.
 
-;; Copyright (C) 2017-2019 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2017-2020 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -66,7 +66,20 @@ If connection data is empty - return nil."
                        :debug debug}}))
       (catch org.apache.http.NoHttpResponseException e nil))))
 
-(defmulti param-handler (fn [acc param] (class param)))
+(defmulti param-handler (fn [acc param] (let [c (class param)]
+                                          (if (.isArray c)
+                                            :java-array
+                                            c))))
+
+(defn param->array [acc param]
+  (.append acc "[")
+  (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
+  (.append acc "]"))
+
+(defn param->list [acc param]
+  (.append acc "'(")
+  (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
+  (.append acc ")"))
 
 (defmethod param-handler java.lang.String [acc param]
   "Wrap Clojure string with quotes for concatenation."
@@ -80,7 +93,7 @@ If connection data is empty - return nil."
   (.append acc param))
 
 (defmethod param-handler java.util.Map [acc param]
-  "Convert Clojure map to Elisp alist."
+  "Convert Java/Clojure map to Elisp alist."
   (.append acc "'(")
   (mapv (fn [[k v]]
           (.append acc "(")
@@ -91,11 +104,26 @@ If connection data is empty - return nil."
         param)
   (.append acc ")"))
 
-(defmethod param-handler java.util.List [acc param]
-  "Convert Clojure list or vector to Elisp list."
-  (.append acc "'(")
-  (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
-  (.append acc ")"))
+(defmethod param-handler java.util.RandomAccess [acc param]
+  "Convert Java/Clojure `RandomAccess` (arrays) classes to Elisp vector.
+Classes like `ArrayList`, `Vector`, `Stack` or `clojure.lang.PersistentVector`."
+  (param->array acc param))
+
+(defmethod param-handler :java-array [acc param]
+  "Convert Java array to Elisp vector."
+  (param->array acc param))
+
+(defmethod param-handler clojure.lang.PersistentList [acc param]
+  "Convert Clojure list to Elisp list."
+  (param->list acc param))
+
+(defmethod param-handler java.util.LinkedList [acc param]
+  "Convert Java LinkedList to Elisp list."
+  (param->list acc param))
+
+(defmethod param-handler java.util.Set [acc param]
+  "Convert Java/Clojure set to Elisp list."
+  (param->list acc param))
 
 (defmethod param-handler java.lang.Boolean [acc param]
   "Convert Clojure boolean to Elisp boolean."
