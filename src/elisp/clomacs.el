@@ -36,6 +36,7 @@
 
 (require 'cl-lib)
 (require 'net-utils)
+(require 'sesman)
 (require 'cider)
 (require 'clojure-mode)
 (require 's)
@@ -63,6 +64,12 @@ Set `nil' for unlimited list length."
   :group 'clomacs
   :type 'integer)
 
+(defcustom clomacs-allow-other-repl nil
+  "When t allow use any CIDER nREPL not only library dedicated nREPL.
+`nil' by default."
+  :group 'clomacs
+  :type 'boolean)
+
 (defun cloamcs-get-dir (repl-info)
   (if repl-info
       (file-name-nondirectory
@@ -85,6 +92,10 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
         result)
     (cider-current-connection)))
 
+(defun clomacs-get-first-connection ()
+  "Get any first CIDER session buffer."
+  (-> (sesman-sessions 'CIDER) car cdr car))
+
 (defun clomacs-get-connection (&optional library)
   "Return buffer with nREPL process related to LIBRARY.
 If LIBRARY is nil, attempts to use \"clomacs\", \"localhost\" or
@@ -92,10 +103,13 @@ any current connection.
 If can't find any nREPL process return nil."
   (if library
       (or (clomacs-search-connection library)
-          (if noninteractive (cider-current-repl)))
+          (if (or noninteractive clomacs-allow-other-repl)
+              (or (cider-current-repl)
+                  (clomacs-get-first-connection))))
+    ;; No `:lib-name' parameter or nil.
     (or (clomacs-search-connection "clomacs")
-        (clomacs-search-connection "localhost")
-        (cider-current-repl))))
+        (cider-current-repl)
+        (clomacs-get-first-connection))))
 
 (defun clomacs-get-session (connection)
   "Return current session for this CONNECTION."
