@@ -85,9 +85,12 @@
   (clomacs-httpd-stop))
 
 (ert-deftest clomacs-get-doc-test ()
-  (should (equal "Wrapped clojure entity: clomacs/format-string
+  (should
+   (or (equal "Wrapped clojure entity: clomacs/format-string
 Format string created by Clojure side to Elisp structure as string."
-                 (clomacs-get-doc nil 'clomacs/format-string))))
+              (clomacs-get-doc nil 'clomacs/format-string))
+       (equal "Wrapped clojure entity: clomacs/format-string"
+              (clomacs-get-doc nil 'clomacs/format-string)))))
 
 (ert-deftest clomacs-integration-test ()
   "Integration test for `clomacs'."
