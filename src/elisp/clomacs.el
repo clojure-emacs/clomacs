@@ -70,7 +70,7 @@ Set `nil' for unlimited list length."
   :group 'clomacs
   :type 'boolean)
 
-(defun cloamcs-get-dir (repl-info)
+(defun clomacs-get-dir (repl-info)
   (if repl-info
       (file-name-nondirectory
        (car (split-string repl-info ":")))))
@@ -83,7 +83,7 @@ REPL-BUFFER-PROJECT-NAME \"clomacs\"."
       (let ((result nil))
         (maphash
          (lambda (k v)
-           (let ((current-project-dir (cloamcs-get-dir (cdr k))))
+           (let ((current-project-dir (clomacs-get-dir (cdr k))))
              (if (and current-project-dir
                       (or (s-contains? project-name current-project-dir)
                           (s-contains? project-name (buffer-name (cadr v)))))
