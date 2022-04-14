@@ -180,7 +180,7 @@ and run `M-x cm-test-mdarkdown-to-html`.
 * [cm-test](https://github.com/kostafey/cm-test) - Clomacs usage example.
 * [ejc-sql](https://github.com/kostafey/ejc-sql) - Emacs SQL client uses
 Clojure JDBC.
-* [flower](https://github.com/PositiveTechnologies/flower) - Integration with
+* [flower](https://github.com/FlowerAutomation/flower) - Integration with
 Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## Requirements:
