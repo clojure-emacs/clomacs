@@ -6,7 +6,7 @@
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
 ;; Version: 0.0.5
-;; Package-Requires: ((emacs "24.3") (cider "0.22.1") (s "1.12.0") (simple-httpd "1.4.6"))
+;; Package-Requires: ((emacs "24.3") (cider "0.22.1") (s "1.12.0") (simple-httpd "1.4.6") (dash "2.19.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -41,6 +41,7 @@
 (require 'clojure-mode)
 (require 's)
 (require 'simple-httpd)
+(require 'dash)
 
 (defcustom clomacs-auto-start-nrepl t
   "When t starts nREPL if Clojure wrapped function is called without nREPL."
