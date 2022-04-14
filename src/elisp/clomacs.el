@@ -114,7 +114,7 @@ If can't find any nREPL process return nil."
 
 (defun clomacs-get-session (connection)
   "Return current session for this CONNECTION."
-  (assert connection)
+  (cl-assert connection)
   (with-current-buffer
     (set-buffer connection)
     (cider-nrepl-eval-session)))
