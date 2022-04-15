@@ -35,6 +35,7 @@
 
 
 (require 'cl-lib)
+(require 'find-func)
 (require 'net-utils)
 (require 'sesman)
 (require 'cider)
@@ -58,12 +59,13 @@
   :group 'clomacs
   :type 'integer)
 
-(defcustom clomacs-print-length 100000
-  "Value for *print-length* set during `clomacs-defun' macros evaluation.
+(eval-and-compile
+  (defcustom clomacs-print-length 100000
+    "Value for *print-length* set during `clomacs-defun' macros evaluation.
 Restricts list length passed from Clojure to Emacs lisp.
 Set `nil' for unlimited list length."
-  :group 'clomacs
-  :type 'integer)
+    :group 'clomacs
+    :type 'integer))
 
 (defcustom clomacs-allow-other-repl nil
   "When t allow use any CIDER nREPL not only library dedicated nREPL.
@@ -76,41 +78,43 @@ Set `nil' for unlimited list length."
       (file-name-nondirectory
        (car (split-string repl-info ":")))))
 
-(defun clomacs-search-connection (project-name)
-  "Search nREPL connection buffer.
+(eval-and-compile
+  (defun clomacs-search-connection (project-name)
+    "Search nREPL connection buffer.
 E.g. if you want to find \"*cider-repl clomacs-20160419.258*\" you shold pass
 REPL-BUFFER-PROJECT-NAME \"clomacs\"."
-  (if project-name
-      (let ((result nil))
-        (maphash
-         (lambda (k v)
-           (let ((current-project-dir (clomacs-get-dir (cdr k))))
-             (if (and current-project-dir
-                      (or (s-contains? project-name current-project-dir)
-                          (s-contains? project-name (buffer-name (cadr v)))))
-                 (setq result (cadr v)))))
-         sesman-sessions-hashmap)
-        result)
-    (cider-current-connection)))
+    (if project-name
+        (let ((result nil))
+          (maphash
+           (lambda (k v)
+             (let ((current-project-dir (clomacs-get-dir (cdr k))))
+               (if (and current-project-dir
+                        (or (s-contains? project-name current-project-dir)
+                            (s-contains? project-name (buffer-name (cadr v)))))
+                   (setq result (cadr v)))))
+           sesman-sessions-hashmap)
+          result)
+      (cider-current-connection))))
 
-(defun clomacs-get-first-connection ()
-  "Get any first CIDER session buffer."
-  (-> (sesman-sessions 'CIDER) car cdr car))
+(eval-and-compile
+  (defun clomacs-get-first-connection ()
+    "Get any first CIDER session buffer."
+    (-> (sesman-sessions 'CIDER) car cdr car))
 
-(defun clomacs-get-connection (&optional library)
-  "Return buffer with nREPL process related to LIBRARY.
+  (defun clomacs-get-connection (&optional library)
+    "Return buffer with nREPL process related to LIBRARY.
 If LIBRARY is nil, attempts to use \"clomacs\", \"localhost\" or
 any current connection.
 If can't find any nREPL process return nil."
-  (if library
-      (or (clomacs-search-connection library)
-          (if (or noninteractive clomacs-allow-other-repl)
-              (or (cider-current-repl)
-                  (clomacs-get-first-connection))))
-    ;; No `:lib-name' parameter or nil.
-    (or (clomacs-search-connection "clomacs")
-        (cider-current-repl)
-        (clomacs-get-first-connection))))
+    (if library
+        (or (clomacs-search-connection library)
+            (if (or noninteractive clomacs-allow-other-repl)
+                (or (cider-current-repl)
+                    (clomacs-get-first-connection))))
+      ;; No `:lib-name' parameter or nil.
+      (or (clomacs-search-connection "clomacs")
+          (cider-current-repl)
+          (clomacs-get-first-connection)))))
 
 (defun clomacs-get-session (connection)
   "Return current session for this CONNECTION."
@@ -279,14 +283,15 @@ PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
    (t (replace-regexp-in-string
        "\\\\." "." (format "'%S" a)))))
 
-(defvar clomacs-possible-return-types
-  (list :string
-        :int
-        :number
-        :list
-        :char
-        :vector
-        :eval))
+(eval-and-compile
+  (defvar clomacs-possible-return-types
+    (list :string
+          :int
+          :number
+          :list
+          :char
+          :vector
+          :eval)))
 
 (defun clomacs-highlight-initialize ()
   (font-lock-add-keywords
@@ -295,32 +300,34 @@ PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
      ("clomacs-def\\b" . font-lock-keyword-face)
      ("clomacs-with-nrepl\\b" . font-lock-keyword-face))))
 
-(defun clomacs-force-symbol-name (some-symbol)
-  "Return lisp symbol SOME-SYMBOL as a string at all costs!"
-  (mapconcat 'char-to-string
-             (string-to-list (symbol-name some-symbol)) ""))
+(eval-and-compile
+  (defun clomacs-force-symbol-name (some-symbol)
+    "Return lisp symbol SOME-SYMBOL as a string at all costs!"
+    (mapconcat 'char-to-string
+               (string-to-list (symbol-name some-symbol)) "")))
 
 (eval-after-load "clomacs"
   (lambda ()
     (clomacs-highlight-initialize)))
 
-(defun clomacs-get-doc (doc cl-entity-name)
-  "Form the emacs-lisp side entity docstring.
+(eval-and-compile
+  (defun clomacs-get-doc (doc cl-entity-name)
+    "Form the emacs-lisp side entity docstring.
 DOC - user-defined docsting.
 CL-ENTITY-NAME - clojure side entity name.
 CL-ENTITY-TYPE - \"value\" or \"function\""
-  (if doc doc
-    (format "Wrapped clojure entity: %s%s"
-            cl-entity-name
-            (let ((cl-entity-doc (if (clomacs-get-connection)
-                                     (condition-case _
-                                         (nrepl-dict-get
-                                          (cider-var-info
-                                           (symbol-name cl-entity-name)) "doc")
-                                       (error nil)))))
-              (if cl-entity-doc
-                  (concat "\n" cl-entity-doc)
-                "")))))
+    (if doc doc
+      (format "Wrapped clojure entity: %s%s"
+              cl-entity-name
+              (let ((cl-entity-doc (if (clomacs-get-connection)
+                                       (condition-case _
+                                           (nrepl-dict-get
+                                            (cider-var-info
+                                             (symbol-name cl-entity-name)) "doc")
+                                         (error nil)))))
+                (if cl-entity-doc
+                    (concat "\n" cl-entity-doc)
+                  ""))))))
 
 (defun clomacs-ensure-nrepl-run (lib-name
                                  wrapped-eval
@@ -379,31 +386,32 @@ PARAMS is a list of the values for parameters of preceding lambda."
             (set-text-properties 0 (length str) nil str)
             str)))
 
-(cl-defun clomacs-prepare-vars (cl-entity-name
-                                &key
-                                (doc nil)
-                                (return-type :string)
-                                namespace)
-  "Prepare intermediate variables for clomacs wrapper macros."
-  (cl-assert (and return-type
-                  (or (functionp return-type)
-                      (member return-type clomacs-possible-return-types)))
-             t
-             (format (concat "Wrong return-type %s! See  C-h v "
-                             "clomacs-possible-return-types")
-                     (clomacs-force-symbol-name return-type)))
-  (let* ((doc (clomacs-get-doc doc cl-entity-name))
-         (cl-entity-name-str (clomacs-force-symbol-name cl-entity-name))
-         (ns-slash-pos (string-match "/" cl-entity-name-str))
-         (implicit-ns (if ns-slash-pos
-                          (substring cl-entity-name-str 0 ns-slash-pos)))
-         (namespace-str (if namespace
-                            (clomacs-force-symbol-name namespace)
-                          implicit-ns))
-         (cl-entity-full-name (if (and namespace (not implicit-ns))
-                                  (concat namespace-str "/" cl-entity-name-str)
-                                cl-entity-name-str)))
-    (list doc namespace-str cl-entity-full-name)))
+(eval-and-compile
+  (cl-defun clomacs-prepare-vars (cl-entity-name
+                                  &key
+                                  (doc nil)
+                                  (return-type :string)
+                                  namespace)
+    "Prepare intermediate variables for clomacs wrapper macros."
+    (cl-assert (and return-type
+                    (or (functionp return-type)
+                        (member return-type clomacs-possible-return-types)))
+               t
+               (format (concat "Wrong return-type %s! See  C-h v "
+                               "clomacs-possible-return-types")
+                       (clomacs-force-symbol-name return-type)))
+    (let* ((doc (clomacs-get-doc doc cl-entity-name))
+           (cl-entity-name-str (clomacs-force-symbol-name cl-entity-name))
+           (ns-slash-pos (string-match "/" cl-entity-name-str))
+           (implicit-ns (if ns-slash-pos
+                            (substring cl-entity-name-str 0 ns-slash-pos)))
+           (namespace-str (if namespace
+                              (clomacs-force-symbol-name namespace)
+                            implicit-ns))
+           (cl-entity-full-name (if (and namespace (not implicit-ns))
+                                    (concat namespace-str "/" cl-entity-name-str)
+                                  cl-entity-name-str)))
+      (list doc namespace-str cl-entity-full-name))))
 
 ;;;###autoload
 (cl-defmacro clomacs-def (el-entity-name
