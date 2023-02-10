@@ -1,6 +1,6 @@
 ;;; clomacs.clj --- Simplifies call Emacs Lisp from Clojure.
 
-;; Copyright (C) 2017-2020 Kostafey <kostafey@gmail.com>
+;; Copyright (C) 2017-2023 Kostafey <kostafey@gmail.com>
 
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
@@ -86,6 +86,10 @@ If connection data is empty - return nil."
   (.append acc "\"")
   (.append acc param)
   (.append acc "\""))
+
+(defmethod param-handler java.lang.Number [acc param]
+  "Pass Java/Clojure numbers as-is."
+  (.append acc param))
 
 (defmethod param-handler clojure.lang.Symbol [acc param]
   "Convert Clojure symbol to Elisp quoted symbol."
