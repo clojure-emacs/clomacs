@@ -1,7 +1,7 @@
 [![License GPL 3](https://img.shields.io/badge/license-GPL_3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
 [![MELPA](https://melpa.org/packages/clomacs-badge.svg)](https://melpa.org/#/clomacs)
 [![Melpa Stable](https://stable.melpa.org/packages/clomacs-badge.svg)](https://stable.melpa.org/#/clomacs)
-[![CircleCI](https://circleci.com/gh/clojure-emacs/clomacs.svg?style=svg)](https://circleci.com/gh/clojure-emacs/clomacs)
+[![Build Status](https://github.com/clojure-emacs/clomacs/workflows/CI/badge.svg)](https://github.com/clojure-emacs/clomacs/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/clojure-emacs/clomacs/badge.svg?branch=master)](https://coveralls.io/github/clojure-emacs/clomacs?branch=master)
 
 # clomacs
@@ -192,7 +192,7 @@ Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## License
 
-Copyright © 2013-2020 Kostafey <kostafey@gmail.com> and
+Copyright © 2013-2023 Kostafey <kostafey@gmail.com> and
 [contributors](https://github.com/clojure-emacs/clomacs/graphs/contributors)
 
 Distributed under the General Public License, version 3.
