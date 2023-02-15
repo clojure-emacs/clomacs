@@ -16,7 +16,12 @@
 (add-to-list 'load-path clomacs-test-path)
 
 (when (require 'undercover nil t)
-  (undercover "src/elisp/*.el"))
+  (setq undercover-force-coverage t)
+  (undercover "src/elisp/*.el"
+              (:report-format 'lcov)
+              (:merge-report nil)
+              (:send-report nil)))
+
 (require 'clomacs)
 
 (setq cider-boot-parameters "repl -s -H localhost wait")
