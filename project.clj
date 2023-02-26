@@ -5,7 +5,7 @@
             :url "http://www.gnu.org/licenses/gpl-3.0.html"}
   :test-paths ["test/clj"]
   :source-paths ["src/clj"]
-  :dependencies [[org.clojure/clojure "1.10.0"]
+  :dependencies [[org.clojure/clojure "1.11.1"]
                  [clj-http "3.7.0"]
                  ;; Used for clomacs self-testing.
                  [markdown-clj "0.9.47"]])
