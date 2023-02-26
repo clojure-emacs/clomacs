@@ -15,3 +15,6 @@ else ifeq ($(wildcard $(HOME)/.cask/bin/),)
 	make -C ~/.cask cask install
 endif
 	cask install
+
+deploy: test
+	lein deploy clojars
