@@ -154,21 +154,25 @@ Classes like `ArrayList`, `Vector`, `Stack` or `clojure.lang.PersistentVector`."
 `result-handler` - function called with result of Elisp returned
 value as parameter, it returns the result of whapped function.
 `debug` - show string passed to evaluation on Elisp side in *Messages* buffer."
-  `(defn ~cl-func-name [& params#]
-     ~doc
-     (~result-handler
-      (clomacs-eval
-       ~cl-func-name
-       (format "(%s%s)"
-               (str '~el-func-name)
-               (loop [rest-params# params#
-                      acc# (new StringBuffer "")]
-                 (let [param# (first rest-params#)]
-                   (if (empty? rest-params#)
-                     (str acc#)
-                     (recur (next rest-params#)
-                            (param-handler (.append acc# " ") param#))))))
-       ~debug))))
+  (let [el-func-name
+        (if (symbol? el-func-name)
+          (str el-func-name)
+          `(str ~el-func-name))]
+    `(defn ~cl-func-name [& params#]
+       ~doc
+       (~result-handler
+        (clomacs-eval
+         ~cl-func-name
+         (format "(%s%s)"
+                 ~el-func-name
+                 (loop [rest-params# params#
+                        acc# (new StringBuffer "")]
+                   (let [param# (first rest-params#)]
+                     (if (empty? rest-params#)
+                       (str acc#)
+                       (recur (next rest-params#)
+                              (param-handler (.append acc# " ") param#))))))
+         ~debug)))))
 
 (defn format-result
   "Can be used to apply the same format to obtain result of Elisp->Clojure

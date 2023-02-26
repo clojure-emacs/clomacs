@@ -31,6 +31,7 @@
                           (aset ar 1 2)
                           (aset ar 2 3)
                           ar)) "[1 2 3]"))
+    (is (number? (read-string (emacs-major-version))))
     (is (= (el-identity [:a "b" 'c])
            (if (>= (read-string (emacs-major-version)) 27)
              "[:a b 'c]"
