@@ -15,6 +15,7 @@
   (testing "param-handler multimethods test."
     (clomacs-defn el-identity 'identity)
     (clomacs-defn emacs-major-version 'clomacs-get-emacs-major-version)
+    (is (= (el-identity nil) ""))
     (is (= (el-identity 1) "1"))
     (is (= (el-identity true) "t"))
     (is (= (el-identity false) ""))

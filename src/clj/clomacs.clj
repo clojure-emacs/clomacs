@@ -74,10 +74,12 @@ If connection data is empty - return nil."
                        :debug debug}}))
       (catch org.apache.http.NoHttpResponseException _ nil))))
 
-(defmulti param-handler (fn [_ param] (let [c (class param)]
-                                        (if (.isArray c)
-                                          :java-array
-                                          c))))
+(defmulti param-handler (fn [_ param]
+                          (when param
+                            (let [c (class param)]
+                              (if (.isArray c)
+                                :java-array
+                                c)))))
 
 (defn param->array [acc param]
   (.append acc "[")
