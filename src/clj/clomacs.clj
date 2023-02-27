@@ -35,26 +35,34 @@
   "Keep Emacs httpd server connection information (host and port)."
   (atom {}))
 
-(defn set-emacs-connection [host port]
+;; Used in `src/elisp/clomacs.el`
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defn set-emacs-connection
   "Set Emacs httpd server connection information.
 Actual data passed when Elisp `clomacs-httpd-start` is called."
+  [host port]
   (reset! emacs-connection {:host host :port port}))
 
-(defn get-emacs-connection []
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defn get-emacs-connection
   "Get Emacs httpd server connection information.
 Used for check if connection data in Clojure side is ok."
+  []
   @emacs-connection)
 
-(defn close-emacs-connection []
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
+(defn close-emacs-connection
   "Clear Emacs httpd server connection information.
 Called by Elisp `clomacs-httpd-stop`."
+  []
   (reset! emacs-connection {}))
 
-(defn clomacs-eval [fname elisp debug]
+(defn clomacs-eval
   "Send `elisp` string to eval it in Emacs.
 Return evaluation result as string.
 If connection data is empty - return nil."
-  (when (not (empty? @emacs-connection))
+  [fname elisp debug]
+  (when (seq @emacs-connection)
     (try
       (:body
        (client/post
@@ -64,12 +72,12 @@ If connection data is empty - return nil."
         {:form-params {:elisp elisp
                        :fname fname
                        :debug debug}}))
-      (catch org.apache.http.NoHttpResponseException e nil))))
+      (catch org.apache.http.NoHttpResponseException _ nil))))
 
-(defmulti param-handler (fn [acc param] (let [c (class param)]
-                                          (if (.isArray c)
-                                            :java-array
-                                            c))))
+(defmulti param-handler (fn [_ param] (let [c (class param)]
+                                        (if (.isArray c)
+                                          :java-array
+                                          c))))
 
 (defn param->array [acc param]
   (.append acc "[")
@@ -82,22 +90,22 @@ If connection data is empty - return nil."
   (.append acc ")"))
 
 (defmethod param-handler java.lang.String [acc param]
-  "Wrap Clojure string with quotes for concatenation."
+  ;; Wrap Clojure string with quotes for concatenation.
   (.append acc "\"")
   (.append acc param)
   (.append acc "\""))
 
 (defmethod param-handler java.lang.Number [acc param]
-  "Pass Java/Clojure numbers as-is."
+  ;; Pass Java/Clojure numbers as-is.
   (.append acc param))
 
 (defmethod param-handler clojure.lang.Symbol [acc param]
-  "Convert Clojure symbol to Elisp quoted symbol."
+  ;; Convert Clojure symbol to Elisp quoted symbol.
   (.append acc "'")
   (.append acc param))
 
 (defmethod param-handler java.util.Map [acc param]
-  "Convert Java/Clojure map to Elisp alist."
+  ;; Convert Java/Clojure map to Elisp alist.
   (.append acc "'(")
   (mapv (fn [[k v]]
           (.append acc "(")
@@ -109,51 +117,52 @@ If connection data is empty - return nil."
   (.append acc ")"))
 
 (defmethod param-handler java.util.RandomAccess [acc param]
-  "Convert Java/Clojure `RandomAccess` (arrays) classes to Elisp vector.
-Classes like `ArrayList`, `Vector`, `Stack` or `clojure.lang.PersistentVector`."
+  ;; Convert Java/Clojure `RandomAccess` (arrays) classes to Elisp vector.
+  ;; Classes like `ArrayList`, `Vector`, `Stack` or `clojure.lang.PersistentVector`.
   (param->array acc param))
 
 (defmethod param-handler :java-array [acc param]
-  "Convert Java array to Elisp vector."
+  ;; Convert Java array to Elisp vector.
   (param->array acc param))
 
 (defmethod param-handler clojure.lang.PersistentList [acc param]
-  "Convert Clojure list to Elisp list."
+  ;; Convert Clojure list to Elisp list.
   (param->list acc param))
 
 (defmethod param-handler java.util.LinkedList [acc param]
-  "Convert Java LinkedList to Elisp list."
+  ;; Convert Java LinkedList to Elisp list.
   (param->list acc param))
 
 (defmethod param-handler java.util.Set [acc param]
-  "Convert Java/Clojure set to Elisp list."
+  ;; Convert Java/Clojure set to Elisp list.
   (param->list acc param))
 
 (defmethod param-handler java.lang.Boolean [acc param]
-  "Convert Clojure boolean to Elisp boolean."
+  ;; Convert Clojure boolean to Elisp boolean.
   (.append acc (if param "t" "nil")))
 
-(defmethod param-handler nil [acc param]
-  "Convert Clojure nil to Elisp nil."
+(defmethod param-handler nil [acc _]
+  ;; Convert Clojure nil to Elisp nil.
   (.append acc "nil"))
 
 (defmethod param-handler :default [acc param]
-  "Use .toString call for param in other cases."
+  ;; Use .toString call for param in other cases.
   (.append acc param))
 
-(defmacro clomacs-defn [cl-func-name
-                        el-func-name &
-                        {:keys [doc
-                                result-handler
-                                debug]
-                         :or {doc ""
-                              result-handler identity
-                              debug false}}]
+(defmacro clomacs-defn
   "Wrap `el-func-name`, evaluated on Emacs side by `cl-func-name`.
 `doc` - optional clojure function docstring.
 `result-handler` - function called with result of Elisp returned
 value as parameter, it returns the result of whapped function.
 `debug` - show string passed to evaluation on Elisp side in *Messages* buffer."
+  [cl-func-name
+   el-func-name &
+   {:keys [doc
+           result-handler
+           debug]
+    :or {doc ""
+         result-handler identity
+         debug false}}]
   (let [el-func-name
         (if (symbol? el-func-name)
           (str el-func-name)
@@ -180,6 +189,8 @@ calls as used in parameters of Clojure->Elisp calls."
   [result]
   (str (param-handler (new StringBuffer "") result)))
 
+;; Used in `test/elisp/clomacs-test.el`
+#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn format-string
   "Format string created by Clojure side to Elisp structure as string."
   [result]

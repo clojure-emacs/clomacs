@@ -1,0 +1,2 @@
+{:lint-as
+ {clomacs/clomacs-defn clojure.core/def}}

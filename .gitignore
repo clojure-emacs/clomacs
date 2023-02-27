@@ -3,6 +3,8 @@
 /classes
 /checkouts
 /coverage
+/.clj-kondo
+/.lsp
 pom.xml
 pom.xml.asc
 *.jar
