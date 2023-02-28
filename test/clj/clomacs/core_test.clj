@@ -2,19 +2,19 @@
   (:require [clojure.test :refer [deftest testing is]]
             [clomacs :refer [clomacs-defn]]))
 
-#_{:clj-kondo/ignore [:inline-def]}
+(clomacs-defn emacs-version 'emacs-version)
+
 (deftest emacs-connection-test
   (testing "clomacs-httpd-start & clomacs-defn fn test."
-    (clomacs-defn emacs-version 'emacs-version)
     (is
      (let [ev (emacs-version)]
        (.contains ev "Emacs")))))
 
-#_{:clj-kondo/ignore [:inline-def]}
+(clomacs-defn el-identity 'identity)
+(clomacs-defn emacs-major-version 'clomacs-get-emacs-major-version)
+
 (deftest type-params-handler-test
   (testing "param-handler multimethods test."
-    (clomacs-defn el-identity 'identity)
-    (clomacs-defn emacs-major-version 'clomacs-get-emacs-major-version)
     (is (= (el-identity nil) ""))
     (is (= (el-identity 1) "1"))
     (is (= (el-identity true) "t"))

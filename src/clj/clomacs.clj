@@ -35,22 +35,18 @@
   "Keep Emacs httpd server connection information (host and port)."
   (atom {}))
 
-;; Used in `src/elisp/clomacs.el`
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn set-emacs-connection
   "Set Emacs httpd server connection information.
 Actual data passed when Elisp `clomacs-httpd-start` is called."
   [host port]
   (reset! emacs-connection {:host host :port port}))
 
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn get-emacs-connection
   "Get Emacs httpd server connection information.
 Used for check if connection data in Clojure side is ok."
   []
   @emacs-connection)
 
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn close-emacs-connection
   "Clear Emacs httpd server connection information.
 Called by Elisp `clomacs-httpd-stop`."
@@ -191,8 +187,6 @@ calls as used in parameters of Clojure->Elisp calls."
   [result]
   (str (param-handler (new StringBuffer "") result)))
 
-;; Used in `test/elisp/clomacs-test.el`
-#_{:clj-kondo/ignore [:clojure-lsp/unused-public-var]}
 (defn format-string
   "Format string created by Clojure side to Elisp structure as string."
   [result]

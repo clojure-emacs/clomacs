@@ -1,2 +1,7 @@
-{:lint-as
- {clomacs/clomacs-defn clojure.core/def}}
+{:lint-as {clomacs/clomacs-defn clojure.core/def}
+ :linters {:clojure-lsp/unused-public-var
+           {:level :info
+            :exclude #{clomacs/set-emacs-connection
+                       clomacs/get-emacs-connection
+                       clomacs/close-emacs-connection
+                       clomacs/format-string}}}}
