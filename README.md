@@ -1,6 +1,7 @@
 [![License GPL 3](https://img.shields.io/badge/license-GPL_3-green.svg)](http://www.gnu.org/licenses/gpl-3.0.txt)
 [![MELPA](https://melpa.org/packages/clomacs-badge.svg)](https://melpa.org/#/clomacs)
 [![Melpa Stable](https://stable.melpa.org/packages/clomacs-badge.svg)](https://stable.melpa.org/#/clomacs)
+[![Clojars Project](https://img.shields.io/clojars/v/clomacs.svg)](https://clojars.org/clomacs)
 [![Build Status](https://github.com/clojure-emacs/clomacs/workflows/CI/badge.svg)](https://github.com/clojure-emacs/clomacs/actions?query=workflow%3ACI)
 [![Coverage Status](https://coveralls.io/repos/github/clojure-emacs/clomacs/badge.svg?branch=master)](https://coveralls.io/github/clojure-emacs/clomacs?branch=master)
 
@@ -112,7 +113,7 @@ lein new cm-test
   :source-paths ["src/clj"]                    ;; add clj folder to the classpath
   :dependencies [[org.clojure/clojure "1.9.0"] ;; Use recent version of Clojure
                  [markdown-clj "0.9.28"]       ;; markdown-clj dependency
-                 [clomacs "0.0.3-SNAPSHOT"]])  ;; Most recent version of clomacs
+                 [clomacs "0.0.6-SNAPSHOT"]])  ;; Most recent version of clomacs
 ```
 
 **3.** Create `clj` folder in the `src/`.<br/>
