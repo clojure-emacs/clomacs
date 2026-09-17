@@ -77,32 +77,32 @@ If connection data is empty - return nil."
                                 :java-array
                                 c)))))
 
-(defn param->array [acc param]
+(defn param->array [^StringBuffer acc param]
   (.append acc "[")
   (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
   (.append acc "]"))
 
-(defn param->list [acc param]
+(defn param->list [^StringBuffer acc param]
   (.append acc "'(")
   (mapv (fn [v] (param-handler acc v) (.append acc " ")) param)
   (.append acc ")"))
 
-(defmethod param-handler java.lang.String [acc param]
+(defmethod param-handler java.lang.String [^StringBuffer acc param]
   ;; Wrap Clojure string with quotes for concatenation.
   (.append acc "\"")
   (.append acc param)
   (.append acc "\""))
 
-(defmethod param-handler java.lang.Number [acc param]
+(defmethod param-handler java.lang.Number [^StringBuffer acc param]
   ;; Pass Java/Clojure numbers as-is.
   (.append acc param))
 
-(defmethod param-handler clojure.lang.Symbol [acc param]
+(defmethod param-handler clojure.lang.Symbol [^StringBuffer acc param]
   ;; Convert Clojure symbol to Elisp quoted symbol.
   (.append acc "'")
   (.append acc param))
 
-(defmethod param-handler java.util.Map [acc param]
+(defmethod param-handler java.util.Map [^StringBuffer acc param]
   ;; Convert Java/Clojure map to Elisp alist.
   (.append acc "'(")
   (mapv (fn [[k v]]
@@ -114,36 +114,36 @@ If connection data is empty - return nil."
         param)
   (.append acc ")"))
 
-(defmethod param-handler java.util.RandomAccess [acc param]
+(defmethod param-handler java.util.RandomAccess [^StringBuffer acc param]
   ;; Convert Java/Clojure `RandomAccess` (arrays) classes to Elisp vector.
   ;; Classes like `ArrayList`, `Vector`, `Stack` or `clojure.lang.PersistentVector`.
   (param->array acc param))
 
-(defmethod param-handler :java-array [acc param]
+(defmethod param-handler :java-array [^StringBuffer acc param]
   ;; Convert Java array to Elisp vector.
   (param->array acc param))
 
-(defmethod param-handler clojure.lang.PersistentList [acc param]
+(defmethod param-handler clojure.lang.PersistentList [^StringBuffer acc param]
   ;; Convert Clojure list to Elisp list.
   (param->list acc param))
 
-(defmethod param-handler java.util.LinkedList [acc param]
+(defmethod param-handler java.util.LinkedList [^StringBuffer acc param]
   ;; Convert Java LinkedList to Elisp list.
   (param->list acc param))
 
-(defmethod param-handler java.util.Set [acc param]
+(defmethod param-handler java.util.Set [^StringBuffer acc param]
   ;; Convert Java/Clojure set to Elisp list.
   (param->list acc param))
 
-(defmethod param-handler java.lang.Boolean [acc param]
+(defmethod param-handler java.lang.Boolean [^StringBuffer acc param]
   ;; Convert Clojure boolean to Elisp boolean.
   (.append acc (if param "t" "nil")))
 
-(defmethod param-handler nil [acc _]
+(defmethod param-handler nil [^StringBuffer acc _]
   ;; Convert Clojure nil to Elisp nil.
   (.append acc "nil"))
 
-(defmethod param-handler :default [acc param]
+(defmethod param-handler :default [^StringBuffer acc param]
   ;; Use .toString call for param in other cases.
   (.append acc param))
 

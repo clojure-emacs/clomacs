@@ -244,8 +244,6 @@ PARAMS is a plist optionally containing :project-dir, :jack-in-cmd and
          ((eq return-type :vector) (read return-string))
          ((eq return-type :eval) (eval (read (read raw-string))))))))
 
-(declare clomacs-format-arg)
-
 (defun clomacs-alist-p (object)
   "Return t if OBJECT is a alist, otherwise, return nil."
   (when (and (listp object)
