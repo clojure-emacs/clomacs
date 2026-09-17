@@ -1,7 +1,7 @@
 version:
 	emacs --version
 
-test : version
+test : version elpa
 	cask exec emacs --script test/elisp/clomacs-test.el
 
 elpa:
