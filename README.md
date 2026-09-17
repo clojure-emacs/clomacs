@@ -175,6 +175,35 @@ and run `M-x cm-test-mdarkdown-to-html`.
 
 `<h1>This is a test</h1>` should occurs in the buffer under the original text.
 
+## Long-running calls
+
+A `:sync` call (the default) is limited by the CIDER `nrepl-sync-request-timeout`
+variable, which is 10 seconds by default, so a slow Clojure function fails with:
+
+```
+error in process filter: Sync nREPL request timed out (op eval code ...
+```
+
+Raising `nrepl-sync-request-timeout` affects every synchronous call, including
+the ones that should stay responsive, so it's better to give the timeout to the
+particular wrapped function:
+
+```lisp
+(clomacs-defun cm-test-resolve-dependencies
+               cm-test.core/resolve-dependencies
+               :lib-name "cm-test"
+               :namespace cm-test.core
+               :timeout 300)
+```
+
+`:timeout` is the number of seconds to wait for the result; `nil` (the default)
+means to use `nrepl-sync-request-timeout` as before. It is available for
+`clomacs-def` as well.
+
+Keep in mind the timeout is a safety net, not a solution: the call still blocks
+Emacs until it returns. Use `:call-type :async` with a `:callback` if the result
+is not needed immediately.
+
 ## Projects uses clomacs:
 
 * [cm-test](https://github.com/kostafey/cm-test) - Clomacs usage example.
@@ -192,7 +221,7 @@ Github, Gitlab, Atlassian Jira, Microsoft TFS, Microsoft Exchange and Slack.
 
 ## License
 
-Copyright © 2013-2023 Kostafey <kostafey@gmail.com> and
+Copyright © 2013-2026 Kostafey <kostafey@gmail.com> and
 [contributors](https://github.com/clojure-emacs/clomacs/graphs/contributors)
 
 Distributed under the General Public License, version 3.

@@ -5,7 +5,7 @@
 ;; Author: Kostafey <kostafey@gmail.com>
 ;; URL: https://github.com/clojure-emacs/clomacs
 ;; Keywords: clojure, interaction
-;; Version: 0.0.5
+;; Version: 0.0.6
 ;; Package-Requires: ((emacs "24.3") (cider "0.22.1") (s "1.12.0") (simple-httpd "1.4.6") (dash "2.19.1"))
 
 ;; This file is not part of GNU Emacs.
@@ -422,12 +422,15 @@ PARAMS is a list of the values for parameters of preceding lambda."
                           lib-name
                           namespace
                           nrepl-ready-callback
+                          (timeout nil)
                           (backend :clj))
   "Wrap CL-ENTITY-NAME, evaluated on clojure side by EL-ENTITY-NAME.
 DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
 TYPE possible values are listed in the CLOMACS-POSSIBLE-RETURN-TYPES,
-or it may be a custom function (:string by default)."
+or it may be a custom function (:string by default).
+TIMEOUT - the number of seconds to wait for the evaluation result.
+When nil (the default) the global `nrepl-sync-request-timeout' is used."
   (cl-multiple-value-bind
       (doc namespace-str cl-entity-full-name)
       (clomacs-prepare-vars cl-entity-name
@@ -438,6 +441,8 @@ or it may be a custom function (:string by default)."
           ,lib-name
           (lambda ()
             (let* ((connection (clomacs-get-connection ,lib-name))
+                   (nrepl-sync-request-timeout
+                    (or ,timeout nrepl-sync-request-timeout))
                    (result
                     (nrepl-sync-request:eval
                      (concat
@@ -465,10 +470,15 @@ or it may be a custom function (:string by default)."
                             namespace
                             (httpd-starter nil)
                             nrepl-ready-callback
+                            (timeout nil)
                             (backend :clj))
   "Wrap CL-FUNC-NAME, evaluated on clojure side by EL-FUNC-NAME.
 CALL-TYPE - call Clojure side :sync or :async.
 CALLBACK - callback function for :async CALL-TYPE case.
+TIMEOUT - the number of seconds to wait for the result of the :sync call.
+When nil (the default) the global `nrepl-sync-request-timeout' is used.
+Useful for the long-running calls, since it can be set per wrapped
+function, unlike `nrepl-sync-request-timeout', which affects them all.
 DOC - optional elisp function docstring (when nil it constructed from
 underlying clojure entity docstring if possible).
 INTERACTIVE - when defined and is a boolean `t` mark function (interactive),
@@ -531,11 +541,13 @@ evaluation can be added and executed."
                                (,callback el-result)))))
                    connection)
                 ;; sync
-                (let ((el-result (clomacs-get-result
-                                  (nrepl-sync-request:eval
-                                   request
-                                   connection)
-                                  ,return-value ',return-type ',namespace)))
+                (let* ((nrepl-sync-request-timeout
+                        (or ,timeout nrepl-sync-request-timeout))
+                       (el-result (clomacs-get-result
+                                   (nrepl-sync-request:eval
+                                    request
+                                    connection)
+                                   ,return-value ',return-type ',namespace)))
                   el-result)))))
         attributes
         ,nrepl-ready-callback
